@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /b)",
+      "PowerShell(node -v)",
+      "PowerShell(pnpm -v)",
+      "PowerShell(docker -v)",
+      "PowerShell(corepack enable)",
+      "PowerShell(corepack prepare pnpm@latest --activate)",
+      "PowerShell(npm config get prefix)",
+      "PowerShell(npm install -g pnpm 2>&1)",
+      "Read(//c/Users/Mr. Developer/Downloads/ai-etsy/**)",
+      "PowerShell(New-Item -ItemType Directory -Path .tmp-docs -Force)",
+      "PowerShell(Move-Item AGENTS.md.bak .tmp-docs\\\\)",
+      "PowerShell(Move-Item PLAN.md.bak .tmp-docs\\\\)",
+      "PowerShell(Move-Item CHANGELOG.md.bak .tmp-docs\\\\)",
+      "PowerShell(pnpm add -D prettier prettier-plugin-tailwindcss 2>&1)"
+    ],
+    "additionalDirectories": ["C:\\Users\\Mr. Developer\\Downloads"]
+  }
+}
