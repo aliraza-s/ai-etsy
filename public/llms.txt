@@ -1,0 +1,29 @@
+# Craftly — AI tools for Etsy sellers
+
+> Craftly is an AI-powered SaaS that helps Etsy sellers write higher-ranking tags, titles, keywords, and descriptions, plus audit listings and shops. All input is user-pasted — no Etsy API, no scraping. Free fee calculator and seasonal events calendar are included with no signup required.
+
+## Core tools
+
+- [Tag Generator](https://craftly.example.com/tools/tag-generator) — Fills all 13 Etsy tag slots with high-search, low-competition phrases. AI-powered by Qwen 7B.
+- [Title Generator](https://craftly.example.com/tools/title-generator) — Five SEO-optimized title variations under Etsy's 140-character limit. AI-powered by Qwen 7B.
+- [Keyword Generator](https://craftly.example.com/tools/keyword-generator) — 30 long-tail keywords ranked by buyer intent. AI-powered by Qwen 32B.
+- [Description Generator](https://craftly.example.com/tools/description-generator) — Scannable, hooked, conversion-tuned product descriptions. AI-powered by Qwen 32B.
+- [Listing Analyzer](https://craftly.example.com/tools/listing-analyzer) — Deep AI audit of one listing across title, tags, description, photos, attributes. Powered by Claude.
+- [Shop Analyzer](https://craftly.example.com/tools/shop-analyzer) — 30+ checks across branding, SEO, conversion, policies. Powered by Claude.
+
+## Free tools (no signup)
+
+- [Etsy Fee Calculator](https://craftly.example.com/tools/fee-calculator) — Every Etsy fee broken down line by line, in real time.
+- [Etsy Holiday Calendar](https://craftly.example.com/tools/events-calendar) — Gift-giving holidays, shipping cutoffs, and seasonal trends.
+
+## Reference
+
+- [Pricing](https://craftly.example.com/pricing) — Free (15 credits/mo), Pro ($5.99/mo), Max ($11.99/mo)
+- [About](https://craftly.example.com/about)
+- [Terms](https://craftly.example.com/terms)
+- [Privacy](https://craftly.example.com/privacy)
+
+## Notes
+
+- Craftly is not affiliated with Etsy, Inc. "Etsy" is a trademark of Etsy, Inc.
+- All listing data is provided by the user; we never call the Etsy API or scrape etsy.com.

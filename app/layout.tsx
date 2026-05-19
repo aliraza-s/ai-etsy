@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { SiteNav } from "@/components/shared/site-nav";
 import { SiteFooter } from "@/components/shared/site-footer";
+import { JsonLd } from "@/components/marketing/json-ld";
+import { organizationSchema, websiteSchema } from "@/lib/seo/schemas";
 import "./globals.css";
 
 const inter = Inter({
@@ -37,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="bg-background text-foreground flex min-h-full flex-col">
+        <JsonLd data={[organizationSchema(), websiteSchema()]} />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SiteNav />
           <main className="flex-1">{children}</main>

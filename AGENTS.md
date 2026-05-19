@@ -63,14 +63,14 @@ It is **not** an Etsy-affiliated product, will never use the word "Etsy" in bran
 
 ## 6. Tech stack (no substitutions without asking)
 
-- **Framework:** Next.js 15 (App Router, RSC), TypeScript strict
+- **Framework:** Next.js 16 (App Router, RSC, Turbopack), TypeScript strict
 - **Styling:** Tailwind CSS v4 + shadcn/ui + lucide-react
 - **Motion:** Framer Motion (respect `prefers-reduced-motion`)
 - **Theme:** next-themes
 - **Forms:** react-hook-form + zod
 - **DB:** Prisma + PostgreSQL 16
 - **Cache/RL:** Redis 7
-- **Auth:** Auth.js v5 (magic link via Resend + Google OAuth + credentials/bcrypt)
+- **Auth:** Auth.js v5 (magic link via Resend + Google OAuth — credentials/bcrypt dropped to reduce attack surface)
 - **AI:** Vercel AI SDK as unified interface; OpenRouter (primary), Anthropic, Together AI
 - **Payments:** Paddle (Merchant of Record)
 - **Email:** Resend
