@@ -23,6 +23,7 @@ const TOOL_LABEL: Record<string, string> = {
   DESCRIPTION_GENERATOR: "Descriptions",
   LISTING_ANALYZER: "Listing audit",
   SHOP_ANALYZER: "Shop audit",
+  NICHE_FINDER: "Niche finder",
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {

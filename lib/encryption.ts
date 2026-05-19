@@ -46,9 +46,3 @@ export function decrypt(payload: string): string {
   const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
   return plaintext.toString("utf8");
 }
-
-/** Last 4 characters of the plaintext key — for display only. Never store this; always derive from the encrypted value. */
-export function maskKey(plaintext: string): string {
-  if (plaintext.length <= 4) return "****";
-  return `…${plaintext.slice(-4)}`;
-}

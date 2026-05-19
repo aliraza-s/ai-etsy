@@ -1,21 +1,53 @@
+import Link from "next/link";
+import { ArrowRight, CreditCard, Sparkles, History } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { CreditCard, Sparkles, History } from "lucide-react";
+import { TOOL_ENUM_TO_SLUG } from "@/lib/ai/schemas";
 
 export const metadata = { title: "Dashboard" };
+export const dynamic = "force-dynamic";
+
+const TOOL_LABEL: Record<string, string> = {
+  TAG_GENERATOR: "Tag Generator",
+  TITLE_GENERATOR: "Title Generator",
+  KEYWORD_GENERATOR: "Keyword Generator",
+  DESCRIPTION_GENERATOR: "Description Generator",
+  LISTING_ANALYZER: "Listing Analyzer",
+  SHOP_ANALYZER: "Shop Analyzer",
+  NICHE_FINDER: "Niche Finder",
+};
+
+const QUICK_LAUNCH: { slug: string; label: string; blurb: string }[] = [
+  { slug: "tag-generator", label: "Tag Generator", blurb: "13 multi-word tags from a title" },
+  { slug: "title-generator", label: "Title Generator", blurb: "5 SEO titles from a description" },
+  { slug: "listing-analyzer", label: "Listing Analyzer", blurb: "Score one listing across 5 axes" },
+  { slug: "bulk", label: "Bulk Runner", blurb: "Run any generator across N rows" },
+];
 
 export default async function DashboardPage() {
   const session = await auth();
   const userId = session!.user.id;
 
-  const [credits, recentGenerations] = await Promise.all([
-    db.creditBalance.findUnique({ where: { userId } }),
-    db.generation.findMany({
+  // Fetch only the fields we actually render — keeps the response small and
+  // lets Prisma skip joins on Generation we don't need on the dashboard.
+  const [credits, subscription, generationCount, lastGen] = await Promise.all([
+    db.creditBalance.findUnique({
+      where: { userId },
+      select: { credits: true, resetsAt: true },
+    }),
+    db.subscription.findUnique({
+      where: { userId },
+      select: { plan: true, status: true, renewsAt: true },
+    }),
+    db.generation.count({ where: { userId, deletedAt: null } }),
+    db.generation.findFirst({
       where: { userId, deletedAt: null },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      select: { tool: true, createdAt: true },
     }),
   ]);
+
+  const plan = subscription?.plan ?? "FREE";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -23,7 +55,7 @@ export default async function DashboardPage() {
         Welcome back{session?.user?.name ? `, ${session.user.name}` : ""}
       </h1>
       <p className="text-muted-foreground mt-1 text-sm">
-        Phase 1 dashboard placeholder. Phase 5 wires the real tools.
+        Pick a tool and paste your listing. Everything you generate lives in History.
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -36,30 +68,63 @@ export default async function DashboardPage() {
         <StatCard
           icon={<Sparkles className="size-4" aria-hidden />}
           label="Plan"
-          value="FREE"
-          hint="upgrade in Phase 4"
+          value={plan}
+          hint={
+            subscription?.renewsAt
+              ? `renews ${subscription.renewsAt.toLocaleDateString()}`
+              : "free tier"
+          }
         />
         <StatCard
           icon={<History className="size-4" aria-hidden />}
           label="Generations"
-          value={recentGenerations.length}
-          hint="last 5"
+          value={generationCount}
+          hint={
+            lastGen
+              ? `last: ${TOOL_LABEL[lastGen.tool] ?? lastGen.tool} · ${lastGen.createdAt.toLocaleDateString()}`
+              : "none yet"
+          }
         />
       </div>
 
-      <div className="border-border bg-card text-card-foreground mt-8 rounded-xl border p-6">
-        <p className="text-muted-foreground font-mono text-xs tracking-wider uppercase">
-          phase 1 status
+      <h2 className="text-muted-foreground mt-10 mb-3 font-mono text-xs font-medium tracking-wider uppercase">
+        Quick launch
+      </h2>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {QUICK_LAUNCH.map((q) => (
+          <li key={q.slug}>
+            <Link
+              href={`/app/${q.slug}`}
+              className="border-border bg-card hover:border-primary/40 group flex items-center justify-between rounded-xl border p-5 transition-colors"
+            >
+              <div>
+                <p className="text-foreground font-semibold">{q.label}</p>
+                <p className="text-muted-foreground mt-0.5 text-sm">{q.blurb}</p>
+              </div>
+              <ArrowRight
+                className="text-muted-foreground group-hover:text-primary size-4 transition-colors"
+                aria-hidden
+              />
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      {lastGen && (
+        <p className="text-muted-foreground mt-8 text-xs">
+          Last run:{" "}
+          <Link
+            href={`/app/${TOOL_ENUM_TO_SLUG[lastGen.tool] ?? "history"}`}
+            className="hover:text-foreground transition-colors"
+          >
+            {TOOL_LABEL[lastGen.tool] ?? lastGen.tool}
+          </Link>{" "}
+          ·{" "}
+          <Link href="/app/history" className="hover:text-foreground transition-colors">
+            see all →
+          </Link>
         </p>
-        <h2 className="mt-1 text-lg font-semibold">Auth + DB wired</h2>
-        <p className="text-muted-foreground mt-2 text-sm">
-          You signed in via{" "}
-          {session?.user?.email ? <strong>{session.user.email}</strong> : "magic link or Google"}.
-          Sessions are JWT; user/account/verification tokens persist in Postgres via the Prisma
-          adapter. Phase 2 builds the public marketing pages, Phase 4 adds billing, Phase 5 brings
-          the AI tools online.
-        </p>
-      </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security & Performance hardening pass
+
+A defense-in-depth sweep across every public surface, plus a perf/cleanup pass.
+None of this introduces new product features — it tightens what's already there.
+
+#### Security
+
+- **HTTP security headers** ([next.config.ts](next.config.ts)). Applied to every response via Next's `headers()` (not the proxy/middleware) so they cover static assets, OG images, and the manifest:
+  - **Content-Security-Policy** with explicit `default-src`, `script-src`, `style-src`, `img-src`, `font-src`, `connect-src`, `frame-ancestors 'none'`, `form-action 'self'`, `base-uri 'self'`, `object-src 'none'`, `manifest-src`, `worker-src`. Plausible domain whitelisted only when configured. `'unsafe-eval'` is allowed in dev only (HMR/Turbopack) and dropped in production.
+  - **Strict-Transport-Security** `max-age=63072000; includeSubDomains; preload` (2-year HSTS with preload-list eligibility).
+  - **X-Content-Type-Options** `nosniff`.
+  - **X-Frame-Options** `DENY` + `frame-ancestors 'none'` (double clickjacking defense).
+  - **Referrer-Policy** `strict-origin-when-cross-origin`.
+  - **Permissions-Policy** denies camera/microphone/geolocation/browsing-topics; payment limited to same-origin (for Paddle).
+  - **Cross-Origin-Opener-Policy** `same-origin` + **Cross-Origin-Resource-Policy** `same-origin` (isolates the document from popups + cross-origin loads).
+  - **X-Robots-Tag** `noindex, nofollow` on `/admin/*`, `/app/*`, `/signin`, `/verify-email`, `/auth/*`. Search engines never index signed-in surfaces even if they're discovered.
+  - `poweredByHeader: false` removes the `X-Powered-By: Next.js` fingerprint.
+- **Token-bucket rate limiting** ([lib/rate-limit.ts](lib/rate-limit.ts)). In-memory per-instance bucket with periodic GC. Drop-in replaceable with Upstash Redis later (same call shape).
+  - **`/api/contact`** — 5 submissions/minute/IP, refill 1 token every 12s. Honeypot-bypassing bots still get filtered silently; brute spammers hit a 429 with `Retry-After`.
+  - **`/api/ai/[tool]`** — 30 requests/min/user, burst 10. Credit gating already caps spend; the rate limit prevents retry loops and abusive client code from flooding the AI provider.
+- **Open-redirect protection** on `/signin`. `callbackUrl` is now validated to be a same-origin path before being passed to `signIn()`. Rejects absolute URLs (`http://`, `https://`, `data:`), protocol-relative URLs (`//evil.com`), and anything that doesn't start with `/`. Falls back to `/app`.
+- **Tightened error responses** in `/api/ai/[tool]`. Zod validation failures now return only `path + message` (capped at 5 issues) rather than the full `parsed.error.issues` object — avoids leaking schema metadata, expected types, and zod error codes to abusive clients.
+- **Verified all admin routes** use `requireAdmin()` (or live under the `/admin` route group which double-checks via layout + proxy). Verified all `/api/ai/*` routes session-gate via `auth()`. Verified `/api/contact` is intentionally public + honeypotted + rate-limited.
+- **Verified `dangerouslySetInnerHTML` usage**. The only call site is `<JsonLd>` in `components/marketing/json-ld.tsx`, which receives only build-time data from our own SEO modules. No user input touches it.
+- **Verified the AES-256-GCM encryption** at `lib/encryption.ts`. 12-byte IV, 16-byte auth tag, key from `ENCRYPTION_KEY` env (validated as a 64-char hex string at module load). API keys are stored encrypted; only `lastFour` is exposed to the UI; full plaintext is never returned over the wire.
+
+#### Performance
+
+- **Cache-Control headers** on static endpoints via [next.config.ts](next.config.ts):
+  - `/icon`, `/apple-icon`, `/manifest.webmanifest` — `public, max-age=86400, s-maxage=604800` (7-day CDN, 1-day browser).
+  - `/sitemap.xml`, `/robots.txt`, `/blog/feed.xml` — `public, max-age=3600, s-maxage=86400` (1-day CDN, 1-hour browser).
+- **Tightened Prisma queries** on hot paths:
+  - `/app` dashboard now uses `select` instead of pulling whole rows, and replaced a `findMany(take: 5)` + array-length count with `count()` + a single `findFirst` for the "last generation" hint. Net: smaller payloads, one fewer round-trip.
+  - `/app/history` uses `select` to fetch only the 5 fields actually rendered (id, tool, output, isPinned, createdAt) — Prisma can skip indexed-only columns it would otherwise project.
+  - `/admin` overview merged 2 overlapping `aggregate` calls (same WHERE clause, different SUMs) into one query. Replaced `recentFails` `include: { user: ... }` with `select` projecting only the 6 fields the UI renders.
+  - `force-dynamic` declared explicitly on `/app` and `/app/history` so Next doesn't try to cache user-scoped data.
+- **Removed unused code** to slim the codebase:
+  - `public/file.svg`, `public/globe.svg`, `public/next.svg`, `public/vercel.svg`, `public/window.svg` — Next.js scaffold leftovers, never referenced.
+  - `lib/encryption.ts#maskKey` — replaced by storing `lastFour` directly in the DB at write time.
+  - `lib/ai/schemas.ts#GENERATOR_TOOLS` + `GeneratorTool` type — exported but unused externally.
+- **Updated stale references**:
+  - Replaced the Phase-1 placeholder copy on `/app` dashboard with a real quick-launch grid (4 tools) and a "last run" link.
+  - Added `NICHE_FINDER` to the `TOOL_LABEL` maps in `/app/history`, `/admin`, and `/admin/users/[id]` — they all skipped the new tool's display name before.
+  - Added `NICHE_FINDER` handler in the history summarizer so cluster results render as `"<top cluster name> (opp 78)"` instead of `"—"`.
+
+### Verification
+
+- `pnpm typecheck` clean
+- `pnpm lint` clean
+- `pnpm build` green — 57 routes (unchanged from Phase 9)
+- `pnpm format` clean
+
+### Decisions
+
+- **CSP allows `'unsafe-inline'` on `script-src`** because Next.js inlines a small bootstrap script per page. The right long-term fix is per-request nonce injection via a custom Document, which is non-trivial in App Router. The remaining XSS surface is minimal because every `dangerouslySetInnerHTML` is sourced from build-time constants.
+- **Rate limiter is in-memory, not Redis.** Single-instance dev + small-scale prod tolerate this. When we move to multi-instance Vercel, swap the `buckets: Map` for Upstash; the `rateLimit()` API stays identical so no callers change.
+- **Did not add CSRF tokens** to the AI/contact endpoints. Auth.js handles its own CSRF for sign-in flows. The AI endpoints are session-cookie-protected with Auth.js's default `SameSite=Lax`, which blocks cross-site POSTs from browsers. The contact endpoint is unauthenticated by design (a contact form), with honeypot + rate-limit defenses.
+- **Did not add a WAF / per-route IP block-list.** Out of scope for a single-instance dev product; revisit when we move behind Cloudflare or a similar edge proxy.
+
+### What's still open
+
+- **Phase 4 — Billing** stays blocked on your Paddle account. Wiring Paddle webhooks will introduce one more endpoint (`/api/billing/webhook`) which needs HMAC signature verification, idempotency keys, and replay protection. That's a dedicated session.
+
 ### Added — Phase 9 (Post-launch: blog, niche finder, bulk runner)
 
 Three independent features that round out the product surface. None require billing

@@ -226,15 +226,6 @@ export const TOOL_TIMEOUT_MS: Record<Tool, number> = {
   NICHE_FINDER: 60_000,
 };
 
-export type GeneratorTool = keyof typeof TOOL_INPUT_SCHEMA;
-
-export const GENERATOR_TOOLS: GeneratorTool[] = [
-  "TAG_GENERATOR",
-  "TITLE_GENERATOR",
-  "KEYWORD_GENERATOR",
-  "DESCRIPTION_GENERATOR",
-];
-
 /** Slug used in URLs and Prisma `Tool` enum mapping. */
 export const TOOL_SLUG_TO_ENUM: Record<string, Tool> = {
   "tag-generator": "TAG_GENERATOR",

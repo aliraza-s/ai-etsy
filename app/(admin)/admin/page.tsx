@@ -30,6 +30,7 @@ const TOOL_LABEL: Record<string, string> = {
   DESCRIPTION_GENERATOR: "Description Generator",
   LISTING_ANALYZER: "Listing Analyzer",
   SHOP_ANALYZER: "Shop Analyzer",
+  NICHE_FINDER: "Niche Finder",
 };
 
 export default async function AdminOverviewPage() {
@@ -42,8 +43,7 @@ export default async function AdminOverviewPage() {
     last30Calls,
     last24Calls,
     failed24,
-    costAgg,
-    creditsBurned,
+    successAgg,
     perTool,
     recentFails,
     activeAnnouncements,
@@ -53,13 +53,10 @@ export default async function AdminOverviewPage() {
     db.usageLog.count({ where: { createdAt: { gte: since } } }),
     db.usageLog.count({ where: { createdAt: { gte: yesterday } } }),
     db.usageLog.count({ where: { createdAt: { gte: yesterday }, status: "FAILED" } }),
+    // Single aggregate covers cost, token I/O, and credits — was 2 round-trips before.
     db.usageLog.aggregate({
       where: { createdAt: { gte: since }, status: "SUCCESS" },
-      _sum: { costUsd: true, inputTokens: true, outputTokens: true },
-    }),
-    db.usageLog.aggregate({
-      where: { createdAt: { gte: since }, status: "SUCCESS" },
-      _sum: { creditsUsed: true },
+      _sum: { costUsd: true, inputTokens: true, outputTokens: true, creditsUsed: true },
     }),
     db.usageLog.groupBy({
       by: ["tool"],
@@ -72,7 +69,14 @@ export default async function AdminOverviewPage() {
       where: { status: "FAILED" },
       orderBy: { createdAt: "desc" },
       take: 5,
-      include: { user: { select: { email: true } } },
+      select: {
+        id: true,
+        tool: true,
+        errorCode: true,
+        modelUsed: true,
+        createdAt: true,
+        user: { select: { email: true } },
+      },
     }),
     db.announcement.count({
       where: {
@@ -82,9 +86,10 @@ export default async function AdminOverviewPage() {
     }),
   ]);
 
-  const totalCost = decimalToNumber(costAgg._sum.costUsd);
-  const tokensIn = costAgg._sum.inputTokens ?? 0;
-  const tokensOut = costAgg._sum.outputTokens ?? 0;
+  const totalCost = decimalToNumber(successAgg._sum.costUsd);
+  const tokensIn = successAgg._sum.inputTokens ?? 0;
+  const tokensOut = successAgg._sum.outputTokens ?? 0;
+  const creditsBurnedTotal = successAgg._sum.creditsUsed ?? 0;
   const failureRate = last24Calls > 0 ? Math.round((failed24 / last24Calls) * 100) : 0;
 
   return (
@@ -198,7 +203,7 @@ export default async function AdminOverviewPage() {
             <Activity className="size-4" aria-hidden /> Credits spent (30d)
           </div>
           <p className="mt-2 text-2xl font-semibold tabular-nums">
-            {(creditsBurned._sum.creditsUsed ?? 0).toLocaleString()}
+            {creditsBurnedTotal.toLocaleString()}
           </p>
           <p className="text-muted-foreground mt-1 text-xs">across all users + tools</p>
         </Card>

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { TOOL_ENUM_TO_SLUG } from "@/lib/ai/schemas";
 
 export const metadata: Metadata = { title: "History" };
+export const dynamic = "force-dynamic";
 
 const TOOL_LABEL: Record<string, string> = {
   TAG_GENERATOR: "Tag Generator",
@@ -14,6 +15,7 @@ const TOOL_LABEL: Record<string, string> = {
   DESCRIPTION_GENERATOR: "Description Generator",
   LISTING_ANALYZER: "Listing Analyzer",
   SHOP_ANALYZER: "Shop Analyzer",
+  NICHE_FINDER: "Niche Finder",
 };
 
 function summarize(tool: string, output: unknown): string {
@@ -44,6 +46,10 @@ function summarize(tool: string, output: unknown): string {
     const top = Array.isArray(o.topFixes) ? (o.topFixes as string[])[0] : null;
     return `Score ${o.overallScore}/100${top ? ` — fix: ${top}` : ""}`;
   }
+  if (tool === "NICHE_FINDER" && Array.isArray(o.clusters)) {
+    const top = (o.clusters as { name: string; opportunityScore: number }[])[0];
+    return top ? `${top.name} (opp ${top.opportunityScore})` : "—";
+  }
   return "—";
 }
 
@@ -55,6 +61,13 @@ export default async function HistoryPage() {
     where: { userId, deletedAt: null },
     orderBy: { createdAt: "desc" },
     take: 50,
+    select: {
+      id: true,
+      tool: true,
+      output: true,
+      isPinned: true,
+      createdAt: true,
+    },
   });
 
   return (

@@ -5,6 +5,7 @@ import { AIRouterError, callTool } from "@/lib/ai/router";
 import { InsufficientCreditsError } from "@/lib/credits";
 import { TOOL_INPUT_SCHEMA, TOOL_SLUG_TO_ENUM } from "@/lib/ai/schemas";
 import { logError } from "@/lib/log";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,17 @@ export async function POST(request: Request, ctx: { params: Promise<{ tool: stri
   }
   const toolEnum = TOOL_SLUG_TO_ENUM[slug]!;
 
+  // Per-user rate limit: 30 requests/min/user, burst 10. Credit gates already
+  // prevent unbounded spend; this protects against retry loops and abusive
+  // client code from spinning the AI provider.
+  const rl = rateLimit(`ai:${session.user.id}`, { capacity: 10, refillPerSecond: 0.5 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", message: "Slow down — too many requests in the last minute." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -40,10 +52,13 @@ export async function POST(request: Request, ctx: { params: Promise<{ tool: stri
   const inputSchema = TOOL_INPUT_SCHEMA[toolEnum as keyof typeof TOOL_INPUT_SCHEMA];
   const parsed = inputSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "validation_failed", issues: parsed.error.issues },
-      { status: 400 },
-    );
+    // Only expose path + message, capped at 5 issues. Avoids leaking schema
+    // metadata (codes, expected types) to potentially abusive clients.
+    const issues = parsed.error.issues.slice(0, 5).map((i) => ({
+      path: i.path.join("."),
+      message: i.message,
+    }));
+    return NextResponse.json({ error: "validation_failed", issues }, { status: 400 });
   }
 
   const userPlan =

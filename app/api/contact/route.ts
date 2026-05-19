@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Resend } from "resend";
 import { logError } from "@/lib/log";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,19 @@ const TOPIC_LABEL: Record<(typeof TOPICS)[number], string> = {
 };
 
 export async function POST(request: Request) {
+  // Rate limit: 5 submissions/minute/IP, with a refill of 1 every ~12s.
+  // Honeypot-bypass still won't help spammers because we silently drop those.
+  const rl = rateLimit(clientKey(request, "contact"), {
+    capacity: 5,
+    refillPerSecond: 1 / 12,
+  });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited", message: "Too many requests. Try again in a minute." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

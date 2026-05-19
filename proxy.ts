@@ -12,6 +12,8 @@ export default auth((req) => {
 
   if ((isAppRoute || isAdminRoute) && !isAuthed) {
     const signin = new URL("/signin", origin);
+    // `pathname` is server-controlled and always begins with `/` — safe to pass.
+    // The signin form additionally validates callbackUrl is same-origin.
     signin.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signin);
   }

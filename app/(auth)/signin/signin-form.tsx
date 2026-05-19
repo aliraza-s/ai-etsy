@@ -14,9 +14,26 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
+/**
+ * Accept only same-origin paths as the post-signin redirect target.
+ *
+ * Rejects absolute URLs (open-redirect protection), protocol-relative URLs
+ * ("//evil.com"), and any path that doesn't start with `/`. Falls back to
+ * the default `/app` route on any rejection.
+ */
+function safeCallbackUrl(raw: string | null): string {
+  if (!raw) return "/app";
+  // Reject absolute URLs (`http://`, `https://`, `data:`, etc.).
+  if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) return "/app";
+  // Reject protocol-relative URLs (`//other-host`).
+  if (raw.startsWith("//")) return "/app";
+  if (!raw.startsWith("/")) return "/app";
+  return raw;
+}
+
 export function SignInForm() {
   const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") ?? "/app";
+  const callbackUrl = safeCallbackUrl(params.get("callbackUrl"));
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const form = useForm<FormValues>({
