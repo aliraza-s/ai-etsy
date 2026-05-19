@@ -1234,6 +1234,141 @@ export const TOOL_PAGES: Partial<Record<ToolSlug, ToolPageContent>> = {
       },
     ],
   },
+
+  "niche-finder": {
+    tldr: "An Etsy niche finder identifies underserved sub-categories within a broad seed. Craftly returns 5 niche clusters per search, each with demand vs competition scores, sample long-tail keywords, and one concrete first-product idea to validate the niche.",
+    metaDescription:
+      "Etsy niche finder that surfaces 5 underserved sub-categories per seed with demand/competition scores. AI-powered. 4 credits per search.",
+    definition: {
+      heading: "What is an Etsy niche finder?",
+      body: "An Etsy niche finder is research software that identifies under-served sub-categories within a broad market. Instead of telling you 'sell candles', it tells you 'sell minimalist desk candles for remote workers — demand 74, competition 41, opportunity score 78'. The best niche finders score every cluster on demand vs competition so you don't waste months building inventory in a saturated lane.",
+      stats: [
+        { value: "5", label: "Niche clusters per seed" },
+        { value: "0-100", label: "Opportunity score range" },
+        { value: "<60s", label: "Average research time" },
+      ],
+    },
+    personas: [
+      {
+        title: "New sellers picking a starting niche",
+        body: "You know you want to sell on Etsy but every category looks crowded. The niche finder shows where the underserved corners are within categories you're considering.",
+      },
+      {
+        title: "Veteran sellers diversifying",
+        body: "Your current category is saturating. You want to launch a second line — but where? The finder surfaces adjacent niches that share buyer overlap with your current shop.",
+      },
+      {
+        title: "Resellers and POD sellers testing themes",
+        body: "Print-on-demand and dropshippers can iterate fast — but only if you know which themes have demand. Five clusters per search compresses days of competitor research into one call.",
+      },
+    ],
+    steps: [
+      {
+        title: "Enter a seed category",
+        body: "Anything from 'home decor' to 'cottagecore stationery' to 'wedding favors'. Optionally hint at audience or price point.",
+      },
+      {
+        title: "AI surfaces 5 sub-niche clusters",
+        body: "Each scored on demand (0-100), competition (0-100), and composite opportunity (0-100). Ordered best-first.",
+      },
+      {
+        title: "Pick the cluster, copy the keywords",
+        body: "Each cluster includes 3-8 long-tail keywords to validate and one first-product idea to test the niche. Build 3-5 listings before testing a second cluster.",
+      },
+    ],
+    example: {
+      before: {
+        label: "Seed input",
+        lines: ["home decor", "audience: remote workers", "mid-range price"],
+      },
+      after: {
+        label: "Top cluster returned",
+        lines: [
+          "Minimalist desk decor for remote workers",
+          "Demand: 74 · Competition: 41 · Opportunity: 78",
+          'Sample keywords: "minimalist desk organizer", "wfh desk decor", "wood desk accessories"',
+          "First product idea: Set of three white-oak desk risers in graduated heights, sold as a modular trio.",
+        ],
+      },
+    },
+    features: [
+      {
+        icon: Compass,
+        title: "5 clusters per seed",
+        body: "Not a flat keyword dump — 5 themed clusters, each with positioning, keywords, and a product idea.",
+      },
+      {
+        icon: BarChart3,
+        title: "Demand and competition scored separately",
+        body: "Composite opportunity score (demand minus competition) so you can sort by what actually matters.",
+      },
+      {
+        icon: Target,
+        title: "Concrete first-product ideas",
+        body: "Every cluster ends with one specific product idea you can build and ship within 7 days.",
+      },
+      {
+        icon: Sparkles,
+        title: "Long-tail keyword examples included",
+        body: "3-8 phrases per cluster to validate buyer search and seed your tag generator.",
+      },
+      {
+        icon: Award,
+        title: "Max-tier model boost",
+        body: "Max subscribers automatically get Claude Sonnet 4.6 on niche research for more nuanced positioning calls.",
+      },
+      {
+        icon: ShieldCheck,
+        title: "No Etsy API or scraping",
+        body: "Trained on broad market patterns, no live Etsy crawl. You're never violating Etsy's terms.",
+      },
+    ],
+    comparison: {
+      rows: [
+        { feature: "Returns scored opportunity, not raw keywords", values: [true, false, false] },
+        { feature: "Includes product idea per niche", values: [true, false, "rarely"] },
+        { feature: "Sub-60-second results", values: [true, "—", "varies"] },
+        { feature: "Etsy-aware competition signals", values: [true, "partial", false] },
+        { feature: "Long-tail keyword seeding included", values: [true, "—", "partial"] },
+        { feature: "Free plan available", values: ["15 credits/mo", "—", "varies"] },
+        { feature: "No marketplace API or scraping required", values: [true, true, "varies"] },
+      ],
+    },
+    faq: [
+      {
+        q: "How is this different from the Keyword Generator?",
+        a: "The Keyword Generator returns 30 long-tail phrases for a single seed — useful when you've already picked your niche and want tags. The Niche Finder returns 5 themed clusters with positioning and product ideas — useful when you're deciding what to build in the first place. They chain naturally: pick a cluster, then run its keywords through Tag Generator.",
+      },
+      {
+        q: "How do you score demand and competition without Etsy API access?",
+        a: "The model is trained on broad public market signals (search trends, marketplace category mix, social patterns) and produces relative scores within the seed category. Treat the absolute numbers as directional, not ground truth — the value is the ranking between the 5 clusters, not the precise 74-vs-41 split.",
+      },
+      {
+        q: "What's a good opportunity score to act on?",
+        a: "Anything ≥65 is worth testing. ≥75 is genuinely underserved and worth building 3-5 listings in. <50 means the cluster is saturated relative to its demand — workable, but expect to compete on price or photography.",
+      },
+      {
+        q: "Should I build in the top cluster only, or spread across all 5?",
+        a: "Start with the top cluster. Build 3-5 listings in it before testing a second cluster. Spreading across all 5 at once dilutes the freshness signal Etsy gives each new listing and slows down your conversion data.",
+      },
+      {
+        q: "Can I re-run with a more specific seed?",
+        a: "Yes — and you should. Run a broad seed first ('home decor') to get a lay of the land. Then re-run with your favorite cluster's name as the new seed to drill in. Each level surfaces narrower niches than the previous.",
+      },
+      {
+        q: "How fresh is the data?",
+        a: "The model knowledge cutoff is January 2026. Cluster positioning and audience patterns shift slowly — quarterly to yearly — so freshness is rarely the bottleneck. If a cluster is hot in a specific 30-day window, watch trade press; this tool isn't a real-time trends product.",
+      },
+      {
+        q: "Does this work for non-Etsy marketplaces?",
+        a: "The positioning advice and cluster framework transfer to Amazon Handmade, Shopify, and similar marketplaces. Demand/competition scores are Etsy-weighted, though, so apply judgment when porting to other platforms.",
+      },
+      {
+        q: "Why 4 credits?",
+        a: "Niche research uses Claude Haiku 4.5 (Sonnet 4.6 for Max subscribers) and produces a longer, more structured output than the keyword generator. The 4-credit cost reflects the model and token budget. Free plan members get ~3 searches/month included.",
+      },
+    ],
+  },
 };
 
 /** Fallback content for tools whose marketing page is still TBD. */

@@ -24,7 +24,9 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "db:backup": "tsx scripts/db-backup.ts",
+    "lh": "tsx scripts/lighthouse.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.78",

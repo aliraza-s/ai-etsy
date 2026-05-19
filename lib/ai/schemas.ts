@@ -33,6 +33,12 @@ export const listingAnalyzerInput = z.object({
   category: z.string().trim().max(120).optional(),
 });
 
+export const nicheFinderInput = z.object({
+  seedCategory: z.string().trim().min(2).max(120),
+  targetAudience: z.string().trim().max(200).optional(),
+  pricePointHint: z.enum(["budget", "mid", "premium"]).optional(),
+});
+
 export const shopAnalyzerInput = z.object({
   shopName: z.string().trim().min(1).max(80),
   about: z.string().trim().min(10).max(3000),
@@ -108,6 +114,59 @@ export const listingAnalyzerOutput = z.object({
   quickWin: z.string().min(8).max(200).describe("The single easiest improvement to ship today."),
 });
 
+export const nicheFinderOutput = z.object({
+  clusters: z
+    .array(
+      z.object({
+        name: z
+          .string()
+          .min(2)
+          .max(80)
+          .describe("Niche cluster name (e.g. 'minimalist desk decor for remote workers')."),
+        positioning: z
+          .string()
+          .min(20)
+          .max(400)
+          .describe("One-paragraph explanation of who this niche serves and why it's distinct."),
+        demandScore: z
+          .number()
+          .int()
+          .min(0)
+          .max(100)
+          .describe("Estimated search demand on Etsy, 0-100."),
+        competitionScore: z
+          .number()
+          .int()
+          .min(0)
+          .max(100)
+          .describe("Estimated competition density on Etsy, 0-100 (higher = more saturated)."),
+        opportunityScore: z
+          .number()
+          .int()
+          .min(0)
+          .max(100)
+          .describe("Composite of demand minus competition, 0-100. Higher = better opportunity."),
+        sampleKeywords: z
+          .array(z.string().min(2).max(60))
+          .min(3)
+          .max(8)
+          .describe("3-8 long-tail keyword examples to validate the niche."),
+        firstProductIdea: z
+          .string()
+          .min(20)
+          .max(200)
+          .describe("One concrete product idea to test the niche with."),
+      }),
+    )
+    .length(5)
+    .describe("Exactly 5 niche clusters, ordered by opportunityScore descending."),
+  summary: z
+    .string()
+    .min(40)
+    .max(500)
+    .describe("2-3 sentence overall read on the seed category and which cluster to start with."),
+});
+
 const pillarScore = z.object({
   score: z.number().int().min(0).max(100),
   why: z.string().min(8).max(400),
@@ -143,6 +202,7 @@ export const TOOL_INPUT_SCHEMA = {
   DESCRIPTION_GENERATOR: descriptionGeneratorInput,
   LISTING_ANALYZER: listingAnalyzerInput,
   SHOP_ANALYZER: shopAnalyzerInput,
+  NICHE_FINDER: nicheFinderInput,
 } as const;
 
 export const TOOL_OUTPUT_SCHEMA = {
@@ -152,6 +212,7 @@ export const TOOL_OUTPUT_SCHEMA = {
   DESCRIPTION_GENERATOR: descriptionGeneratorOutput,
   LISTING_ANALYZER: listingAnalyzerOutput,
   SHOP_ANALYZER: shopAnalyzerOutput,
+  NICHE_FINDER: nicheFinderOutput,
 } as const;
 
 /** Per-tool request timeout (ms). Generators are quick, analyzers may take 30-60s. */
@@ -162,6 +223,7 @@ export const TOOL_TIMEOUT_MS: Record<Tool, number> = {
   DESCRIPTION_GENERATOR: 30_000,
   LISTING_ANALYZER: 90_000,
   SHOP_ANALYZER: 90_000,
+  NICHE_FINDER: 60_000,
 };
 
 export type GeneratorTool = keyof typeof TOOL_INPUT_SCHEMA;
@@ -181,6 +243,7 @@ export const TOOL_SLUG_TO_ENUM: Record<string, Tool> = {
   "description-generator": "DESCRIPTION_GENERATOR",
   "listing-analyzer": "LISTING_ANALYZER",
   "shop-analyzer": "SHOP_ANALYZER",
+  "niche-finder": "NICHE_FINDER",
 };
 
 export const TOOL_ENUM_TO_SLUG: Record<Tool, string> = Object.fromEntries(
@@ -194,10 +257,11 @@ export const CREDIT_COST: Record<Tool, number> = {
   DESCRIPTION_GENERATOR: 3,
   LISTING_ANALYZER: 5,
   SHOP_ANALYZER: 8,
+  NICHE_FINDER: 4,
 };
 
 /** Tools where MAX-tier subscribers get the premium model. */
-export const MAX_BOOST_TOOLS: Tool[] = ["LISTING_ANALYZER", "SHOP_ANALYZER"];
+export const MAX_BOOST_TOOLS: Tool[] = ["LISTING_ANALYZER", "SHOP_ANALYZER", "NICHE_FINDER"];
 
 /** Premium model spec for MAX-tier subscribers on analyzer tools. */
 export const MAX_BOOST_MODEL = {
@@ -259,6 +323,17 @@ export function buildUserPrompt(tool: Tool, input: unknown): string {
         i.category ? `Category: ${i.category}` : null,
         "",
         `Description:\n${i.description}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    }
+    case "NICHE_FINDER": {
+      const i = nicheFinderInput.parse(input);
+      return [
+        `Seed category: ${i.seedCategory}`,
+        i.targetAudience ? `Target audience hint: ${i.targetAudience}` : null,
+        i.pricePointHint ? `Price point: ${i.pricePointHint}` : null,
+        "Identify exactly 5 underserved sub-niche clusters within this category on Etsy. For each, score demand (0-100), competition (0-100), and opportunity (demand minus competition, 0-100). Return clusters ordered by opportunity score descending. Include 3-8 long-tail keyword examples per cluster and one first product idea to validate. End with a 2-3 sentence summary recommending which cluster to start with.",
       ]
         .filter(Boolean)
         .join("\n");

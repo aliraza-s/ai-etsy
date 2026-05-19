@@ -8,6 +8,7 @@ import {
   Store,
   Calculator,
   CalendarDays,
+  Compass,
 } from "lucide-react";
 
 export type ToolSlug =
@@ -17,6 +18,7 @@ export type ToolSlug =
   | "description-generator"
   | "listing-analyzer"
   | "shop-analyzer"
+  | "niche-finder"
   | "fee-calculator"
   | "events-calendar";
 
@@ -99,6 +101,17 @@ export const TOOLS: ToolMeta[] = [
     tagline: "30+ checks across branding, SEO, conversion, and policies.",
     icon: Store,
     credits: 8,
+    category: "paid",
+    model: "Claude Haiku 4.5",
+    maxBoost: true,
+  },
+  {
+    slug: "niche-finder",
+    name: "Niche Finder",
+    heroTitle: "Etsy niche finder that surfaces underserved sub-categories",
+    tagline: "5 ranked niche clusters per seed — demand vs competition, scored for opportunity.",
+    icon: Compass,
+    credits: 4,
     category: "paid",
     model: "Claude Haiku 4.5",
     maxBoost: true,

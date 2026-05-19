@@ -18,6 +18,7 @@ import {
   buildUserPrompt,
 } from "@/lib/ai/schemas";
 import { estimateCost, getModel } from "./providers";
+import { logError, logWarn } from "@/lib/log";
 
 // ─── In-memory AIConfig cache (60s TTL) ──────────────────────────────────────
 
@@ -56,7 +57,7 @@ async function resolveApiKey(provider: AIConfig["provider"]): Promise<string> {
     try {
       return decrypt(record.encryptedKey);
     } catch (e) {
-      console.error(`[ai/router] Failed to decrypt ${provider} key from DB`, e);
+      logError(e, { scope: "ai/router/decrypt", provider });
     }
   }
   // 2) Fall back to env vars (Phase 5 dev convenience; replace with DB key in prod).
@@ -178,10 +179,11 @@ export async function callTool(params: CallToolParams) {
       };
     } catch (err) {
       lastError = err;
-      console.warn(
-        `[ai/router] ${tool} attempt with ${attempt.provider}/${attempt.model} failed:`,
-        err,
-      );
+      logWarn(`ai/router ${tool} attempt failed`, {
+        provider: attempt.provider,
+        model: attempt.model,
+        error: err instanceof Error ? err.message : String(err),
+      });
       // Record FAILED usage for this attempt so admins can see retries in analytics.
       await recordUsage(userId, tool, 0, {
         modelUsed: attempt.model,

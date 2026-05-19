@@ -2,10 +2,18 @@ import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LogOut } from "lucide-react";
+import { db } from "@/lib/db";
+import { AnnouncementBanner } from "@/components/app/announcement-banner";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/signin");
+
+  const sub = await db.subscription.findUnique({
+    where: { userId: session.user.id },
+    select: { plan: true },
+  });
+  const plan = sub?.plan ?? "FREE";
 
   return (
     <div className="bg-background min-h-[calc(100vh-3.5rem)]">
@@ -58,6 +66,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               Shop audit
             </Link>
             <Link
+              href="/app/niche-finder"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary rounded px-2 py-1 transition-colors"
+            >
+              Niches
+            </Link>
+            <Link
+              href="/app/bulk"
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary rounded px-2 py-1 transition-colors"
+            >
+              Bulk
+            </Link>
+            <Link
               href="/app/history"
               className="text-muted-foreground hover:text-foreground hover:bg-secondary rounded px-2 py-1 transition-colors"
             >
@@ -87,6 +107,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </form>
         </div>
       </div>
+      <AnnouncementBanner role={session.user.role} plan={plan} />
       {children}
     </div>
   );

@@ -7,6 +7,351 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Phase 9 (Post-launch: blog, niche finder, bulk runner)
+
+Three independent features that round out the product surface. None require billing
+to be live, so they could ship in any order. The blog is content-led growth; Niche
+Finder is a new AI tool; Bulk Runner is workflow leverage for power users.
+
+#### Blog — `/blog` + `/blog/[slug]` + RSS
+
+- **`lib/content/blog.ts`** — typed `BlogPost` registry. Posts are TypeScript modules (one per file under `lib/content/blog-posts/`), giving us full JSX-in-content power without the MDX loader + frontmatter overhead. Swapping to actual `.mdx` later is a single-file change because the registry exports the same shape either way.
+- **`components/blog/prose.tsx`** — shared `<Prose>` wrapper plus authoring helpers: `<H2>`, `<H3>`, `<P>`, `<Lead>`, `<UL>`, `<OL>`, `<LI>`, `<Quote>`, `<Code>`, `<Callout tone="info|warn|success">`, `<Stat>`, `<StatGrid>`, `<ToolMention slug="...">`. Authors write semantic JSX; the wrapper handles spacing, anchor offsets, and link styling.
+- **3 starter posts** in `lib/content/blog-posts/`:
+  - **`etsy-title-anatomy`** — "The anatomy of an Etsy title that actually ranks in 2026". Walks the 5-zone structure of high-ranking titles with before/after examples and the 6 common mistakes.
+  - **`thirteen-tag-strategy`** — "How to actually use all 13 Etsy tags". The 4+4+5 framework, 20-char ceiling, seasonal rotation tactic.
+  - **`why-etsy-listings-stall`** — "Why your Etsy listing stops getting views (and the 4-step fix)". The stall pattern by day, why Etsy does it, the audit/edit/wait fix loop.
+- **`/blog`** index page — hero, featured post card, post grid with tag chips, RSS link.
+- **`/blog/[slug]`** post page — meta + open-graph card, breadcrumb, header (date/reading-time/author), tag chips, full Prose body, related posts (3, newest), CTA panel.
+- **`/blog/feed.xml`** — RSS 2.0 feed with `atom:link` self reference, channel metadata, per-post `<category>` tags. Cached `s-maxage=3600`. Discovery wired through `<link rel="alternate">` in the blog index `metadata.alternates.types`.
+- **`Article` JSON-LD** emitted on each post page with `headline`, `description`, `image` (the per-post OG), `datePublished`, `dateModified`, `author`, `publisher`, `mainEntityOfPage`, `keywords` — full coverage for Google's Article rich results.
+- **OG images** — `/blog/opengraph-image` (index) and `/blog/[slug]/opengraph-image` (per-post, accent toggles by `post.accent`).
+- **Sitemap** now includes `/blog` and every post (priority 0.7, `lastModified` from the post date).
+- **Footer** Company column has a Blog link.
+
+#### Niche Finder — new AI tool
+
+- **`prisma/schema.prisma`** — added `NICHE_FINDER` to the `Tool` enum. (Local devs: run `pnpm db:migrate` to apply.) Prisma client regenerated via `pnpm db:generate` so TS picks up the new enum value without needing a DB.
+- **`lib/ai/schemas.ts`** — extends with:
+  - `nicheFinderInput` — `seedCategory` (2-120 chars), optional `targetAudience` (≤200), optional `pricePointHint` (budget/mid/premium).
+  - `nicheFinderOutput` — exactly 5 clusters, each with `name`, `positioning`, `demandScore` (0-100), `competitionScore` (0-100), `opportunityScore` (0-100), 3-8 `sampleKeywords`, one `firstProductIdea`; plus a 40-500 char `summary`.
+  - Registered in `TOOL_INPUT_SCHEMA` + `TOOL_OUTPUT_SCHEMA` + `TOOL_TIMEOUT_MS` (60s) + `CREDIT_COST` (4) + `MAX_BOOST_TOOLS` (auto-Sonnet on Max).
+  - `buildUserPrompt` case for `NICHE_FINDER` that formats the seed/audience/price hints into a clean prompt.
+- **`lib/ai/sample-inputs.ts`** — sample input for the admin Test button.
+- **`lib/ai/providers/mock.ts`** — deterministic 5-cluster mock response (Minimalist desk decor, Cottagecore stationery, Line-art pet portraits, Modular travel jewelry, Eco party decor) with realistic positioning/scoring/keywords/product ideas.
+- **`scripts/seed.ts`** — `SYSTEM_PROMPTS.NICHE_FINDER` added; `maxTokens` raised to 4096 for this tool alongside the two analyzers.
+- **`app/api/ai/[tool]/route.ts`** — `niche-finder` added to `ALLOWED_SLUGS`. No other route changes needed.
+- **`/app/niche-finder`** UI page + client component — seed input, optional audience textarea, price-point pill picker; result UI shows the summary panel, then 5 cluster cards with opportunity-score badge, positioning paragraph, demand + headroom score bars, sample keyword chips, and a first-product-idea callout. Reuses `<ToolShell>` + `<ScoreBar>`.
+- **`lib/content/tools.ts`** — added `niche-finder` to `ToolSlug` + `TOOLS` (4 credits, MAX-boosted, Compass icon).
+- **`lib/content/tool-pages.ts`** — full marketing-page content for `/tools/niche-finder`: TLDR, definition with 3 cited stats, 3 personas, 3 steps, before/after example, 6 features, 7-row comparison, 8-item FAQ targeting AEO questions ("how is this different from Keyword Generator", "how do you score without API", "what opportunity score to act on", etc.).
+- Sub-nav, sitemap, and footer auto-pick up the new tool via the `TOOLS` registry.
+
+#### Bulk Runner — `/app/bulk`
+
+- **`/app/bulk`** — pick a tool (Tag / Title / Keyword / Description), paste N input rows (one per line for the first three, blank-separated blocks for description bullets), kick off all rows against the existing `/api/ai/<slug>` endpoint. **Reuses every Phase 5 invariant**: per-row credit reservation, per-row UsageLog, per-row Generation history. Failures only burn the row that failed.
+- **Bounded concurrency** at 4 parallel requests (config constant) — protects the Serializable credit-deduction transaction from contention and avoids melting providers.
+- **Progress UI** — per-row status icons (queued · running · success · error · cancelled), per-row duration, summary line per output, aggregate counts at the top.
+- **Insufficient-credits handling** — when one row gets a 402, the remaining queued rows transition to `cancelled` (no credit deducted) instead of all failing in parallel. The user sees a clean stop, not a wave of red.
+- **Stop button** — flips a `cancelRef` so already-running rows complete but no new ones are picked up.
+- **CSV export** — appears after the run completes. Headers: `#, input, status, output, duration_ms, error`. Per-tool `csvValue()` adapter flattens structured outputs (tag arrays, keyword (phrase, intent) tuples, multi-line descriptions) into single-cell strings. CSV-safe escaping for embedded commas, quotes, newlines.
+- App sub-nav gets a "Bulk" tab next to History.
+
+### Verification
+
+- `pnpm typecheck` clean
+- `pnpm lint` clean
+- `pnpm build` green — **57 routes** (up from 49): +6 blog routes (index, dynamic post, RSS, 2 OG image variants), +1 `/app/niche-finder`, +1 `/app/bulk`. Plus the auto-added `/tools/niche-finder` marketing surface from the `TOOLS` registry.
+- `pnpm format` clean
+
+### Decisions
+
+- **TypeScript content registry over MDX file-glob.** Same JSX-in-content power, no loader plumbing, no frontmatter syntax, and authoring keeps full TS autocomplete on the helper components. A future swap to actual `.mdx` files is straightforward because the page templates render `post.body` — they don't care where the JSX came from.
+- **Niche Finder is on the same enum migration path as the other 6 tools.** The Prisma `Tool` enum addition (`NICHE_FINDER`) is a forward-only enum value add — safe to deploy. No data migration. Existing AIConfig / UsageLog / Generation rows are unaffected.
+- **Bulk runner is a thin client over the existing endpoint** — _not_ a new `/api/ai/bulk` route. The reasons: (1) every row gets atomic credit deduction + UsageLog already, (2) per-row failure isolation is automatic, (3) admin analytics work unchanged, (4) we don't have to maintain a parallel codepath for bulk. The tradeoff is N HTTP round-trips instead of one; with concurrency 4 that's fine in practice.
+- **Concurrency 4 is conservative.** Could lift to 8 once we have real-world traffic data. Set lower (1–2) if the user is on free-tier Anthropic credits and worried about RPM caps.
+
+### To use in dev
+
+```powershell
+# Apply the new enum value (one-time)
+pnpm db:migrate
+
+# Re-seed so the new AIConfig row appears
+pnpm db:seed
+
+pnpm dev
+```
+
+Then:
+
+- http://localhost:3000/blog — index with 3 starter posts and RSS link
+- http://localhost:3000/blog/etsy-title-anatomy — full article
+- http://localhost:3000/blog/feed.xml — RSS feed
+- http://localhost:3000/tools/niche-finder — marketing page with the new tool's content
+- http://localhost:3000/app/niche-finder — sign in → paste a seed → 5 clusters in seconds (mock mode shows the deterministic response)
+- http://localhost:3000/app/bulk — pick "Tag Generator", paste 5–10 product titles, click Run; watch them stream in, export CSV
+
+### Added — Phase 8 (Launch polish)
+
+Production-ready surface: programmatic OG images on every public page, app
+icons + web manifest, env-gated observability (Sentry + Plausible), a
+Lottie-or-SVG illustration shim, and dev-ops scripts (Postgres backups, a
+Lighthouse audit runner). Nothing breaks if you don't configure any of it —
+each layer is opt-in and falls back gracefully.
+
+#### Programmatic OG images
+
+- **`lib/og.tsx`** — shared `ogImage(input)` helper using `next/og` ImageResponse. 1200×630, gradient background, dot-pattern texture, accent rail on the right edge (teal default, amber for free/secondary), 72×72 glyph badge, eyebrow + title + subtitle + brand footer. Renders with system fonts only — no jsdelivr emoji-font fetches at build time. Satori's no-`z-index` constraint handled via source-order layering. ASCII-safe glyphs only.
+- **6 per-page OG routes** via `opengraph-image.tsx` in each route group:
+  - `/` — "Sell more. Type less." (teal, glyph `C`)
+  - `/pricing` — "Honest pricing. Cancel any time." (amber, `$`)
+  - `/tools` — "Eight tools, one toolkit." (teal, `+`)
+  - `/tools/[slug]` — dynamic per-tool name + tagline (teal for paid, amber for free)
+  - `/about` — "Built by sellers, for sellers." (teal, `@`)
+  - `/contact` — "We read every message." (amber, `@`)
+- **Favicon + Apple touch icon** as runtime-generated `ImageResponse` files (`app/icon.tsx` 32×32 and `app/apple-icon.tsx` 180×180). Brand-teal solid + monogram. No PNG asset to maintain or to fall out of sync with the brand.
+
+#### Web manifest + theme-color + a11y
+
+- **`app/manifest.ts`** — emits a real `/manifest.webmanifest` with name, short name, theme-color (`#0D9488`), display mode (`standalone`), and entries for the runtime-generated icons.
+- **Theme-color meta** via the new `export const viewport` block in `app/layout.tsx` — light `#ffffff`, dark `#0a0a0a`. Mobile Chrome/Safari address bars match the page.
+- **Skip-to-content link** in the root layout: visually hidden until focused, jumps to `#main-content`. Keyboard-only users no longer have to tab through the entire nav.
+- `<main>` got an `id="main-content"` to anchor the skip-link.
+- `applicationName` + `appleWebApp` set on root metadata for proper PWA-style add-to-home-screen behavior.
+
+#### Lottie-or-SVG illustration shim
+
+- **`components/illustrations/lottie-or-fallback.tsx`** — client component that fetches `/lottie/<name>.json` on mount; renders Lottie if the file exists, the SVG fallback otherwise. Per-path response cached in a module-level map so each illustration only fetches once per session. Default `loop: true`, `autoplay: true`.
+- **`HeroIllustration` + `StepPaste/Generate/Rank`** now wrap themselves in the shim. The inline SVG remains the default — drop a Lottie file at `public/lottie/{hero,step-paste,step-generate,step-rank}.json` to upgrade with no code changes.
+- **`public/lottie/README.md`** — drop-in convention reference: file paths, expected fallback components, sourcing notes (LottieFiles, Icons8), brand-color guidance.
+
+#### Observability — env-gated, install-optional
+
+- **`lib/log.ts`** — `logError(err, context)` + `logWarn(message, context)`. Always logs to console. Lazy-imports `@sentry/nextjs` only when both `SENTRY_DSN` is set **and** the package is installed. Indirect dynamic import via `Function()` constructor so the file compiles when the SDK isn't installed (no `Cannot find module` error at `tsc` time).
+- **Wired into**: `lib/ai/router.ts` (decrypt failure + per-attempt failure), `app/api/ai/[tool]/route.ts` (unhandled error), `app/api/contact/route.ts` (Resend send failure). Replaces 3 bare `console.error`/`console.warn` calls with structured `logError`/`logWarn`.
+- **`components/shared/analytics.tsx`** — `<Analytics>` server component that mounts Plausible's `<script>` only when `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` is set. Supports both Plausible Cloud (default `script.js`) and self-hosted via `NEXT_PUBLIC_PLAUSIBLE_SRC` override. Mounted in the root layout after the theme provider. Zero impact on local dev (returns `null` when domain unset).
+
+#### Dev-ops scripts
+
+- **`scripts/db-backup.ts`** + `pnpm db:backup` — Postgres snapshot via `docker exec pg_dump -F c`. Writes timestamped `craftly-YYYYMMDD-HHMMSS.sql` files to `./backups/`. Container, DB, and user can be overridden via env (`DB_BACKUP_CONTAINER`, `POSTGRES_DB`, `POSTGRES_USER`). Restore command is printed after each successful backup. Intended for local dev — production should use the managed backup of whoever's running Postgres.
+- **`scripts/lighthouse.ts`** + `pnpm lh` — runs `npx -y lighthouse` against 8 representative routes (landing, pricing, tools hub, a paid tool, the free fee calc, about, contact, privacy), prints a colored Perf/A11y/BP/SEO summary table, and writes the full JSON to `./.lighthouse/<iso-timestamp>.json` for diffing across runs. Uses `npx` so we don't carry the heavy `lighthouse` package as a project dep. Configurable via `LH_BASE_URL` and `LH_PRESET` (desktop or perf).
+
+#### `.env.example`
+
+- Documented every new env var with inline comments: `CONTACT_INBOX`, `SENTRY_DSN`, `NEXT_PUBLIC_PLAUSIBLE_DOMAIN`, `NEXT_PUBLIC_PLAUSIBLE_SRC`, `DB_BACKUP_CONTAINER`, `POSTGRES_USER`, `POSTGRES_DB`, `LH_BASE_URL`, `LH_PRESET`. Each section explains how the system behaves when the var is unset (sensible defaults, no broken builds).
+
+### Decisions
+
+- **No new heavyweight dependencies.** `lottie-react` was already installed in Phase 2 wave 1, so the shim ships free. Sentry stays out of `package.json` until someone explicitly installs it — `pnpm add @sentry/nextjs` and the dynamic import in `lib/log.ts` picks it up automatically. Lighthouse runs via `npx` for the same reason.
+- **OG images are programmatic.** Static PNGs in `/public/og-*.png` would also work, but they would drift from the brand the first time we changed a color or copy. ImageResponse re-renders from the SITE constants every build.
+- **No emoji in OG glyphs.** Satori (the renderer behind `next/og`) tries to fetch an emoji font from jsdelivr the first time it sees one. Offline/sandboxed builds fail. ASCII characters (`C`, `$`, `+`, `/`, `@`) are sufficient and never trigger a network fetch.
+- **Skip-link before anything else.** Putting it as the first interactive element in `<body>` (before JsonLd, before ThemeProvider) means screen-reader users hear it immediately on page load.
+
+### Verification
+
+- `pnpm typecheck` clean
+- `pnpm lint` clean
+- `pnpm build` green — **49 routes**, including 6 OG images, icon, apple-icon, and manifest.webmanifest. (Up from 41 in Phase 2 wave 3.)
+- `pnpm format` clean
+- New scripts (`pnpm db:backup`, `pnpm lh`) registered in `package.json` and run via `tsx` (no extra runtime deps needed)
+
+### To use in dev
+
+```powershell
+# Per-page OG previews
+http://localhost:3000/opengraph-image
+http://localhost:3000/pricing/opengraph-image
+http://localhost:3000/tools/tag-generator/opengraph-image
+http://localhost:3000/about/opengraph-image
+http://localhost:3000/contact/opengraph-image
+
+# Favicon + Apple icon
+http://localhost:3000/icon
+http://localhost:3000/apple-icon
+
+# Web manifest
+http://localhost:3000/manifest.webmanifest
+
+# Lottie swap-in: drop a JSON file at public/lottie/hero.json and reload — no rebuild needed
+
+# Backup the dev database
+pnpm db:backup
+# → backups/craftly-20260519-143012.sql
+
+# Run a Lighthouse audit against the running dev server
+pnpm dev   # (in one terminal)
+pnpm lh    # (in another)
+
+# Enable Plausible
+# .env.local:
+#   NEXT_PUBLIC_PLAUSIBLE_DOMAIN=craftly.app
+
+# Enable Sentry
+pnpm add @sentry/nextjs
+# .env.local:
+#   SENTRY_DSN=https://...@sentry.io/...
+```
+
+### Added — Phase 2 wave 3 (Legal, About, Contact)
+
+The remaining five marketing pages. With these, every footer link resolves and the SEO surface is complete: every public route has a canonical URL, an OpenGraph card, breadcrumb JSON-LD, and (where applicable) FAQ JSON-LD.
+
+#### Shared
+
+- **`components/marketing/legal-page.tsx`** — shared layout for policy pages: centered hero with eyebrow + title + last-updated date, a sticky table-of-contents (lg+ viewports) bound to section anchors, semantic `<section>` per item with `scroll-mt-24` for clean anchor navigation, and a "questions?" footer link to `/contact`. Reused by all three legal pages, so they stay visually consistent and edit-once.
+
+#### `/terms` — Terms of Service
+
+- 15 sections covering: acceptance, what the Service does, accounts, plans/credits/billing (no roll-over, prices subject to 30-day notice), acceptable use (no scraping/no re-selling/no model-training/no IP infringement), AI output disclaimers, IP rights (user owns inputs and outputs subject to provider limits), third-party services + the Etsy trademark disclaimer, warranty disclaimer, liability cap (greater of 12 months paid or USD $100), indemnity, termination, governing law, change policy, contact.
+- Cross-links to Privacy and Refund Policy where relevant.
+
+#### `/privacy` — Privacy Policy
+
+- 11 sections opening with a 4-bullet TL;DR ("we collect the minimum… don't sell… don't train… delete anytime"), then full detail: data we collect (account / billing / tool inputs / usage / cookies), how we use it, AI providers + outbound data flow (single API call, provider retention policy), who we share with (categorized: AI inference / auth / payments / infra / error monitoring), retention windows (account: 30d post-delete, history: while-active, usage logs: 24mo, billing: 6–10y tax law), security (TLS, AES-256-GCM, breach-notice 72h), user rights (GDPR-style: access / correct / delete / export / object / withdraw / lodge complaint), international transfers, children policy, change policy, contact emails.
+- Lists exact service providers by name (Anthropic, OpenRouter, Together AI, Resend, Google, Paddle, Vercel, Sentry) so users know the data flow explicitly.
+
+#### `/refund-policy` — Refund Policy
+
+- 8 sections including: short summary, **14-day money-back guarantee** on first Pro/Max charge (once per customer), cancellation mechanics (access through paid period, drops to Free, history preserved), when refunds don't apply (after day 14, unused credits, annual outside window, disappointment with AI quality, provider failures already credit-refunded, chargebacks-without-contact), the in-app **automatic credit refund** path for provider failures (separate from cash refunds), how-to-request flow (email, two-business-day response, 10-business-day payment provider timing), and an EU/UK statutory withdrawal-right section noting our guarantee meets/exceeds the minimum.
+
+#### `/about` — About page
+
+- SXO-anatomy: hero ("we make the boring parts of selling fast"), story block (two-column with sticky heading: blank-title problem → existing tools fall short → ${SITE.name} as response), 4 values cards (privacy by design / transparent pricing / no training on your data / built to be repaired), 3-step timeline (Q4 2025 prototype → Q1 2026 launch → current roadmap), "how we operate" sidebar with 4 bullets (one product focused, public changelog, reachable founders, honest defaults), 6-item FAQ targeting AEO questions ("who built it", "are you affiliated with Etsy", "why not just use ChatGPT", "which AI models", "what happens to my text", "affiliate program"), CTA panel with 4 trust signals.
+- Emits `BreadcrumbList` + `FAQPage` JSON-LD.
+
+#### `/contact` — Contact page
+
+- Two-column layout: contact form on the left (name, email, topic dropdown, message with live char count, honeypot field for spam), info column on the right (three direct email addresses — `hello@`, `billing@`, `privacy@` — each with a one-line use case, plus a response-time card stating "under 24 hours, Mon-Fri, refunds in 2 business days, security ack same-day").
+- 5-item FAQ ("how fast do you reply", "should I include screenshots", "custom plans for larger sellers", "feature requests", "security issues").
+- Honeypot anti-spam: hidden "website" field that real users never fill but bots do — submissions where it's non-empty return success without sending, so bots can't tell they've been filtered.
+- Inline success state: after a successful submit, the form is replaced by a green confirmation card so the user immediately knows it went through.
+- Emits `BreadcrumbList` + `FAQPage` JSON-LD.
+
+#### `app/api/contact/route.ts`
+
+- POST endpoint: zod-validated (name 1-120, email ≤200, topic ∈ 6 values, message 10-3000, honeypot must be empty).
+- Sends via Resend to `CONTACT_INBOX` (env, default `hello@craftly.app`), with `replyTo: form.email` so an admin reply lands in the sender's inbox directly.
+- **Dev fallback**: when `RESEND_API_KEY` is unset, the submission is logged to the terminal in cyan instead — same pattern as the Auth.js magic-link flow, so you can develop the form without provisioning email.
+- Honeypot hits silently return `{ ok: true }` (don't leak the filter to bots).
+
+### Verification
+
+- `pnpm typecheck` clean
+- `pnpm lint` clean
+- `pnpm build` green — **41 routes** (up from 35): +5 pages (`/terms`, `/privacy`, `/refund-policy`, `/about`, `/contact`) + 1 API route (`/api/contact`). Footer links + sitemap entries already existed from Phase 2 wave 1; this wave fills them in.
+- `pnpm format` clean
+
+### To use in dev
+
+```powershell
+pnpm dev
+```
+
+- http://localhost:3000/about — the team page with story, values, timeline, FAQ, CTA
+- http://localhost:3000/contact — fill the form, hit send. With no `RESEND_API_KEY` set, the message is logged to the dev terminal. Set `RESEND_API_KEY` and (optionally) `CONTACT_INBOX` to forward to email.
+- http://localhost:3000/terms · /privacy · /refund-policy — TOC-driven legal docs, deep-linkable anchors (`/privacy#retention`, etc.)
+
+### Decisions
+
+- **Legal copy is generic-but-honest, not template-generated.** Each policy is written to actually describe what this product does, not to wave a hand at compliance. Sections like "AI providers and outbound data" don't appear in stock SaaS templates.
+- **Last-updated stamps are explicit dates**, not relative ("3 months ago"). Search engines and skeptical users both prefer this.
+- **Email-as-API for contact** rather than a database table. We don't need to log contact-form submissions — Resend's inbox is the canonical store. If we ever want a Linear or Notion integration, swap the `resend.emails.send` call for a webhook.
+- **No real privacy-policy template references** were copied. Anything that looks legalistic is original to this project. Have a lawyer review before shipping commercially in the EU/UK.
+
+### Added — Phase 7 (Admin)
+
+The operational layer. Six admin pages + six admin API routes that let you run the
+product without ever touching code or the DB shell. Every page is role-gated by the
+proxy + an extra check in the layout; every API route uses `requireAdmin()`.
+
+#### Shared admin infrastructure
+
+- **`app/(admin)/admin/layout.tsx`** — admin shell with a horizontally-scrollable sub-nav (Overview · Users · Usage · AI config · API keys · Announcements), "← Back to app" link, sign-out form. Double-gates (`session.user.role === "ADMIN"` redirects to `/app`) so the layout fails closed even if the proxy is bypassed in dev.
+- **`components/admin/admin-primitives.tsx`** — `<PageHeader>`, `<Card>`, `<StatCard>`, `<Badge>` (5 tones), `<DataTable>`, `formatUsd()`, `formatRelative()`. Reused across every admin page so the UI stays consistent.
+- **`lib/admin.ts`** — `requireAdmin()` helper for API routes that returns `{ ok, session }` or `{ ok, response }` for early-return. Replaces ad-hoc `session.user.role !== "ADMIN"` checks.
+- **`lib/admin/time.ts`** — `sinceMsAgo()` / `ONE_DAY_MS` helpers. Extracted so the React 19 `react-hooks/purity` lint rule doesn't trip on `Date.now()` inside async server components.
+
+#### `/admin` — Operational dashboard
+
+- 4 KPI cards: users (total + active paid subs), 30d calls + 24h calls, 30d AI cost (with token volume), 24h failure rate (auto-toned green/warn/red).
+- Per-tool usage table (last 30d) with inspect links into filtered usage page.
+- Recent-failures panel surfaces the last 5 `UsageLog` rows where `status = FAILED`, with tool, error code, user email, and timestamp.
+- Bottom row: credits-spent gauge, active-announcements count, average cost per successful call.
+
+#### `/admin/ai-config` — Live model + prompt editor with Test button
+
+- **List page** (`/admin/ai-config`) — six tool cards showing current provider · model, fallback, temp, max-tokens, last-updated. Max-boost tools labeled "Max → Sonnet 4.6".
+- **Editor** (`/admin/ai-config/[slug]`) — per-tool form: primary provider/model, fallback provider/model, temperature (0–2), maxOutputTokens (64–16384), system prompt (multiline mono textarea with live char count). Dirty-state detection; reset button when dirty.
+- **Test button** — runs the _unsaved_ config against a canned sample input for that tool, no credits charged, no `UsageLog` row written. Shows duration + raw JSON output (schema-validated by the same `TOOL_OUTPUT_SCHEMA` the production router uses). Errors render as a red card with the provider's actual message.
+- **PATCH `/api/admin/ai-config/[slug]`** — zod-validated input, stamps `updatedBy = session.email`, invalidates the in-memory router config cache via the new `invalidateConfigCache()` export from `lib/ai/router.ts` so changes go live immediately (not in 60s).
+- **POST `/api/admin/ai-config/test`** — runs `generateObject({ model, schema: TOOL_OUTPUT_SCHEMA[tool], system, prompt: buildUserPrompt(tool, SAMPLE_INPUTS[tool]), temperature, maxOutputTokens })` with `AbortSignal.timeout(TOOL_TIMEOUT_MS[tool])`. Catches all errors and returns them as `{ ok: false, error }` so failures render inline.
+- **`lib/ai/sample-inputs.ts`** — canned input per tool that satisfies the corresponding `TOOL_INPUT_SCHEMA`. Used only by the Test button.
+
+#### `/admin/api-keys` — Encrypted key rotation
+
+- One section per provider (Anthropic, OpenRouter, Together). Shows status (Active / Disabled / Not set), last-4 only, last-updated, who-by. Links to each provider's key console.
+- Password-style input (with show/hide eye toggle) for new key entry. Leaving the field empty + saving means flags-only update.
+- Per-provider monthly budget cap field (Decimal in DB, optional). Active toggle. Remove button (with `confirm()`) deletes the row — router falls back to env var.
+- **PUT `/api/admin/api-keys/[provider]`** — encrypts the plaintext via `encrypt()` before storage (AES-256-GCM, see `lib/encryption.ts`). Only ever stores `encryptedKey` + `lastFour`. Plaintext is never logged, never echoed, never persisted.
+- **DELETE `/api/admin/api-keys/[provider]`** — idempotent (no error if already missing).
+- Banner warning shown when `MOCK_AI=true` is set in env, so admins aren't confused that stored keys "don't seem to be doing anything."
+
+#### `/admin/users` — User management
+
+- **List** (`/admin/users`) — paginated 25 per page, search by email or name, ordered by createdAt desc. Each row: email/name, role, plan, credit balance, call/generation counts (last 30d), join age, edit link.
+- **Detail** (`/admin/users/[id]`) — 4 KPI cards (credits, 30d calls, 30d cost, plan status), inline editor for role / plan / credits, tool-mix breakdown (30d), last 15 calls.
+- **PATCH `/api/admin/users/[id]`** — atomic 3-write transaction: update role, upsert subscription, upsert credit balance. **Last-admin guard:** prevents demoting the only remaining admin.
+- **DELETE `/api/admin/users/[id]`** — soft-delete (sets `deletedAt`), keeps usage history intact. Refuses to delete the calling admin (self-delete guard) or the last remaining admin.
+
+#### `/admin/usage` — Cost + traffic analytics
+
+- Filters: range (24h / 7d / 30d / 90d), tool, status — all wired through search params so URLs are shareable / linkable from the overview.
+- 4 KPI cards: total calls (with success count), AI cost (with input/output token totals), avg latency (with credits spent), failure rate (auto-toned).
+- 4 grouping tables: by tool, by model (top 8), by user (top 10, linked to detail page), recent 30 calls feed with status badge + duration + relative time.
+- All queries are `groupBy` with proper `orderBy` (Prisma's nested `_count` ordering syntax).
+
+#### `/admin/announcements` — Site-wide banners
+
+- Single-page CRUD: create form doubles as edit form (state-toggled). Fields: title, body, audience (`ALL` / `FREE` / `PRO` / `MAX` / `ADMIN`), isActive, expiresAt (datetime-local, optional).
+- List below the form shows every announcement with status badges (Active / Inactive / Expired), audience tag, body preview, edit + delete buttons.
+- **POST `/api/admin/announcements`** + **PATCH `/api/admin/announcements/[id]`** + **DELETE `/api/admin/announcements/[id]`** — all zod-validated, all admin-gated.
+- **`components/app/announcement-banner.tsx`** — server component used by `/app` layout. Queries the latest active announcement whose audience matches the viewer's role/plan, with `expiresAt > now()` filter. Renders a colored banner above the dashboard nav. Returns `null` when nothing applies (zero layout shift).
+
+### Changed
+
+- **`lib/ai/router.ts`** — `invalidateConfigCache(tool?)` exported so the AI-config PATCH route can flush the in-memory 60s cache the moment a save commits. Previously you had to wait up to 60 seconds for changes to take effect.
+- **`app/(app)/app/layout.tsx`** — now fetches the user's plan and renders `<AnnouncementBanner>` below the sub-nav.
+
+### Decisions
+
+- **No per-key cost tracker yet.** The `ApiKey.monthlyBudgetUsd` field is captured but the spend-vs-cap check isn't wired into the router. That's a Phase 8 polish item once we see real traffic patterns; for now it documents intent.
+- **Admin auth is double-gated** (proxy + layout) for defense-in-depth. The proxy redirects un-authed routes, but the layout's explicit `session.user.role !== "ADMIN"` check survives any future proxy bug.
+- **Test button bypasses credit + UsageLog** intentionally. Admins iterate on prompts dozens of times; we don't want that to skew analytics or burn the shared admin credit balance.
+- **AI-config changes flush the cache immediately** rather than waiting 60s — admins expect "save" to mean "now."
+- **User soft-delete vs hard-delete:** soft (`deletedAt`) keeps usage history queryable for analytics. A hard-delete tool is reserved for a future GDPR-erasure flow.
+
+### Verification
+
+- `pnpm typecheck` clean
+- `pnpm lint` clean
+- `pnpm build` green — **35 routes** (up from 20): 7 new admin pages + 6 new admin API routes + the existing 22.
+- `pnpm format` clean (one CHANGELOG.md warning expected — auto-formatted on next pre-commit)
+
+### To use in dev
+
+```powershell
+pnpm dev
+```
+
+Sign in as `aliraza4043627@gmail.com` (the seeded admin). Then:
+
+- http://localhost:3000/admin — operational overview
+- http://localhost:3000/admin/ai-config — pick any tool → edit the system prompt → click "Test with sample input" — schema-validated JSON output comes back in seconds (or, in `MOCK_AI=true` mode, the deterministic mock output)
+- http://localhost:3000/admin/api-keys — rotate a key without losing the previous (encrypt → upsert → only last-4 ever visible)
+- http://localhost:3000/admin/users — paginated list with search; click a row → set role, plan, credit balance
+- http://localhost:3000/admin/usage?range=7d — filter by tool / status / range
+- http://localhost:3000/admin/announcements — publish a banner targeted at `ALL` — it appears immediately above the `/app` sub-nav for every signed-in user matching the audience
+
 ### Added — Phase 6 (Premium tools: Listing & Shop Analyzers)
 
 Both deep-audit tools are now live, reusing the Phase 5 atomic credit + router infrastructure. No code duplication — the router already had `MAX_BOOST_TOOLS` wired for the Sonnet-4.6 boost.
@@ -60,6 +405,7 @@ pnpm dev
 ```
 
 Sign in (mock mode is on by default). Try:
+
 - http://localhost:3000/app/listing-analyzer — paste any listing; see the 5-axis score and prioritized fixes.
 - http://localhost:3000/app/shop-analyzer — paste your About + announcement; see the 5-pillar score plus brand-voice notes.
 

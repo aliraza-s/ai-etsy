@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { LottieOrFallback } from "./lottie-or-fallback";
 
 const COMMON_STYLES = `
   @keyframes step-fade-up { 0% { opacity: 0; transform: translateY(6px); } 100% { opacity: 1; transform: translateY(0); } }
@@ -22,6 +23,16 @@ function StepShell({ children, className }: { children: React.ReactNode; classNa
 
 /** Step 1 — Paste your listing */
 export function StepPaste({ className }: { className?: string }) {
+  return (
+    <LottieOrFallback
+      src="/lottie/step-paste.json"
+      className={cn("relative aspect-square w-full max-w-[180px]", className)}
+      fallback={<StepPasteSvg className={className} />}
+    />
+  );
+}
+
+function StepPasteSvg({ className }: { className?: string }) {
   return (
     <StepShell className={className}>
       <rect
@@ -115,6 +126,16 @@ export function StepPaste({ className }: { className?: string }) {
 /** Step 2 — AI generates */
 export function StepGenerate({ className }: { className?: string }) {
   return (
+    <LottieOrFallback
+      src="/lottie/step-generate.json"
+      className={cn("relative aspect-square w-full max-w-[180px]", className)}
+      fallback={<StepGenerateSvg className={className} />}
+    />
+  );
+}
+
+function StepGenerateSvg({ className }: { className?: string }) {
+  return (
     <StepShell className={className}>
       <defs>
         <linearGradient id="ai-glow" x1="0" y1="0" x2="1" y2="1">
@@ -182,6 +203,16 @@ export function StepGenerate({ className }: { className?: string }) {
 
 /** Step 3 — Copy and rank */
 export function StepRank({ className }: { className?: string }) {
+  return (
+    <LottieOrFallback
+      src="/lottie/step-rank.json"
+      className={cn("relative aspect-square w-full max-w-[180px]", className)}
+      fallback={<StepRankSvg className={className} />}
+    />
+  );
+}
+
+function StepRankSvg({ className }: { className?: string }) {
   return (
     <StepShell className={className}>
       <rect

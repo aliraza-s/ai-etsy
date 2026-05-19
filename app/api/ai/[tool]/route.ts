@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { AIRouterError, callTool } from "@/lib/ai/router";
 import { InsufficientCreditsError } from "@/lib/credits";
 import { TOOL_INPUT_SCHEMA, TOOL_SLUG_TO_ENUM } from "@/lib/ai/schemas";
+import { logError } from "@/lib/log";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,7 @@ const ALLOWED_SLUGS = new Set([
   "description-generator",
   "listing-analyzer",
   "shop-analyzer",
+  "niche-finder",
 ]);
 
 export async function POST(request: Request, ctx: { params: Promise<{ tool: string }> }) {
@@ -92,7 +94,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ tool: stri
       const status = err.code === "RATE_LIMITED" ? 429 : err.code === "TIMEOUT" ? 504 : 502;
       return NextResponse.json({ error: err.code.toLowerCase(), message: err.message }, { status });
     }
-    console.error("[/api/ai/[tool]] unhandled", err);
+    logError(err, { scope: "api/ai/[tool]", slug });
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

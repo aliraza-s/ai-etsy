@@ -188,6 +188,104 @@ function pickMockResponse(prompt: unknown): string {
     });
   }
 
+  if (promptStr.includes("underserved sub-niche clusters") || promptStr.includes("niche finder")) {
+    return JSON.stringify({
+      clusters: [
+        {
+          name: "Minimalist desk decor for remote workers",
+          positioning:
+            "Niche overlap between home-office sellers and minimalist aesthetic shoppers. Buyers are professionals refreshing their work-from-home setup with small accent pieces — wood desk organizers, mono-color pen holders, low-profile cable trays.",
+          demandScore: 74,
+          competitionScore: 41,
+          opportunityScore: 78,
+          sampleKeywords: [
+            "minimalist desk organizer",
+            "wfh desk decor",
+            "wood desk accessories",
+            "monochrome office decor",
+            "small desk plant pot",
+            "remote worker gift",
+          ],
+          firstProductIdea:
+            "Set of three white-oak desk risers in graduated heights, sold as a modular trio.",
+        },
+        {
+          name: "Cottagecore stationery for journaling",
+          positioning:
+            "Cottagecore aesthetic shoppers crossing into stationery and journaling. Pastel illustrated washi, dried-flower bookmarks, soft-bound notebooks with botanical covers. Demand is steady year-round with a March-April spike.",
+          demandScore: 68,
+          competitionScore: 52,
+          opportunityScore: 65,
+          sampleKeywords: [
+            "cottagecore journal",
+            "pressed flower bookmark",
+            "botanical washi tape",
+            "fairycore stationery",
+            "vintage journal kit",
+            "garden journal gift",
+          ],
+          firstProductIdea:
+            "Pressed-wildflower bookmark set of 6 with hand-lettered tags, sealed in resin.",
+        },
+        {
+          name: "Custom pet portraits — line art only",
+          positioning:
+            "Pet portrait category is saturated, but the specific subset of minimalist single-line art (one continuous line, monochrome) is much less crowded. Higher AOV than full-color illustrations and faster to deliver.",
+          demandScore: 71,
+          competitionScore: 58,
+          opportunityScore: 60,
+          sampleKeywords: [
+            "line art pet portrait",
+            "one line dog drawing",
+            "minimalist pet art",
+            "custom cat line art",
+            "single line dog illustration",
+            "pet memorial line drawing",
+          ],
+          firstProductIdea:
+            "Digital single-line pet portrait from a customer photo, delivered as 300 dpi PNG within 48h.",
+        },
+        {
+          name: "Modular jewelry for travel",
+          positioning:
+            "Travel-friendly jewelry that packs flat or stacks. Combines two distinct buyer groups: frequent flyers and minimalist jewelry shoppers. Premium price point ($35-$95) tolerates ad spend better than budget pieces.",
+          demandScore: 62,
+          competitionScore: 47,
+          opportunityScore: 58,
+          sampleKeywords: [
+            "travel jewelry case",
+            "stackable rings travel",
+            "flat pack necklace",
+            "minimalist travel ring",
+            "carry on jewelry",
+            "modular silver ring",
+          ],
+          firstProductIdea:
+            "Set of 3 interlocking sterling silver rings that nest flat into a magnetic travel case.",
+        },
+        {
+          name: "Eco-friendly party decor",
+          positioning:
+            "Parents and event hosts looking for biodegradable/reusable alternatives to plastic party supplies. Steady demand from sustainability-conscious millennials. Highest competition of the five but still under-served in specific micro-categories like reusable banners.",
+          demandScore: 81,
+          competitionScore: 73,
+          opportunityScore: 54,
+          sampleKeywords: [
+            "biodegradable balloons",
+            "reusable party banner",
+            "eco birthday decor",
+            "plastic free party",
+            "fabric birthday banner",
+            "sustainable party kit",
+          ],
+          firstProductIdea: "Reusable felt-letter birthday banner with detachable name patches.",
+        },
+      ],
+      summary:
+        "Start with 'Minimalist desk decor for remote workers' — highest opportunity score (78), demand still climbing post-Q1, and competition is well below saturation. Build 3-5 listings in that cluster before testing the journaling or pet-portrait clusters.",
+    });
+  }
+
   if (promptStr.includes("audit this etsy shop") || promptStr.includes("shop analyzer")) {
     return JSON.stringify({
       overallScore: 58,

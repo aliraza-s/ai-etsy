@@ -1,13 +1,24 @@
 import { cn } from "@/lib/utils";
+import { LottieOrFallback } from "./lottie-or-fallback";
 
 /**
- * Hero illustration — animated SVG.
+ * Hero illustration.
  *
- * Architected as a drop-in: swap for a `<Lottie>` component later by replacing
- * the SVG markup. Animations use CSS keyframes (no JS), respect
- * `prefers-reduced-motion`, and use brand CSS variables (primary/accent).
+ * Renders an inline animated SVG by default. If a Lottie JSON file exists at
+ * `/public/lottie/hero.json`, the `LottieOrFallback` shim swaps it in at
+ * runtime. See `public/lottie/README.md` for the drop-in convention.
  */
 export function HeroIllustration({ className }: { className?: string }) {
+  return (
+    <LottieOrFallback
+      src="/lottie/hero.json"
+      className={cn("relative isolate aspect-[4/3] w-full max-w-md", className)}
+      fallback={<HeroSvg className={className} />}
+    />
+  );
+}
+
+function HeroSvg({ className }: { className?: string }) {
   return (
     <div className={cn("relative isolate aspect-[4/3] w-full max-w-md", className)} aria-hidden>
       <style>{`
@@ -43,10 +54,8 @@ export function HeroIllustration({ className }: { className?: string }) {
           </filter>
         </defs>
 
-        {/* Soft background blob */}
         <ellipse cx="200" cy="150" rx="180" ry="120" fill="url(#hero-gradient)" />
 
-        {/* Orbit ring */}
         <g
           className="craftly-anim"
           style={{
@@ -67,7 +76,6 @@ export function HeroIllustration({ className }: { className?: string }) {
           <circle cx="310" cy="150" r="4" fill="oklch(0.77 0.16 70)" />
         </g>
 
-        {/* Central card — "listing" */}
         <g
           className="craftly-anim"
           style={{ animation: "craftly-float 6s ease-in-out infinite" }}
@@ -83,7 +91,6 @@ export function HeroIllustration({ className }: { className?: string }) {
             stroke="var(--border)"
             strokeWidth="1"
           />
-          {/* Image placeholder */}
           <rect
             x="147"
             y="107"
@@ -93,7 +100,6 @@ export function HeroIllustration({ className }: { className?: string }) {
             fill="oklch(0.585 0.12 191)"
             fillOpacity="0.12"
           />
-          {/* Sparkle inside */}
           <g
             className="craftly-anim"
             style={{
@@ -106,7 +112,6 @@ export function HeroIllustration({ className }: { className?: string }) {
               fill="oklch(0.585 0.12 191)"
             />
           </g>
-          {/* Text lines */}
           <rect
             x="147"
             y="161"
@@ -136,7 +141,6 @@ export function HeroIllustration({ className }: { className?: string }) {
           />
         </g>
 
-        {/* Floating tag chip — top left */}
         <g
           className="craftly-anim"
           style={{
@@ -165,7 +169,6 @@ export function HeroIllustration({ className }: { className?: string }) {
           />
         </g>
 
-        {/* Floating tag chip — bottom right */}
         <g
           className="craftly-anim"
           style={{
@@ -194,7 +197,6 @@ export function HeroIllustration({ className }: { className?: string }) {
           />
         </g>
 
-        {/* AI prompt bubble — top right */}
         <g
           className="craftly-anim"
           style={{
@@ -226,7 +228,6 @@ export function HeroIllustration({ className }: { className?: string }) {
           </text>
         </g>
 
-        {/* Connecting line — animated dash */}
         <path
           className="craftly-anim"
           d="M 315 108 Q 280 130 220 140"

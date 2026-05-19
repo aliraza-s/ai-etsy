@@ -42,6 +42,12 @@ const SYSTEM_PROMPTS: Record<Tool, { provider: AIProvider; model: string; prompt
     prompt:
       "You are an Etsy shop auditor. Evaluate branding, about section, shop announcement, policies, listing diversity, conversion signals. Return JSON: { overallScore, axes: { branding, copy, seo, conversion }[], top3Wins[], top3Fixes[] }.",
   },
+  NICHE_FINDER: {
+    provider: "ANTHROPIC",
+    model: "claude-haiku-4-5-20251001",
+    prompt:
+      "You are an Etsy market researcher. Given a seed category and optional audience/price hints, identify exactly 5 underserved sub-niche clusters on Etsy. For each, return { name, positioning, demandScore (0-100), competitionScore (0-100), opportunityScore (demand - competition, 0-100), sampleKeywords[3-8], firstProductIdea }. Order clusters by opportunityScore desc. Add a 2-3 sentence summary with which cluster to start with. Return JSON.",
+  },
 };
 
 async function main() {
@@ -87,7 +93,10 @@ async function main() {
         provider: cfg.provider,
         model: cfg.model,
         temperature: 0.7,
-        maxTokens: tool === "LISTING_ANALYZER" || tool === "SHOP_ANALYZER" ? 4096 : 1024,
+        maxTokens:
+          tool === "LISTING_ANALYZER" || tool === "SHOP_ANALYZER" || tool === "NICHE_FINDER"
+            ? 4096
+            : 1024,
         systemPrompt: cfg.prompt,
       },
     });

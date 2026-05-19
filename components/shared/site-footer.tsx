@@ -12,6 +12,7 @@ const FOOTER_GROUPS = [
       { href: "/tools/description-generator", label: "Description Generator" },
       { href: "/tools/listing-analyzer", label: "Listing Analyzer" },
       { href: "/tools/shop-analyzer", label: "Shop Analyzer" },
+      { href: "/tools/niche-finder", label: "Niche Finder" },
     ],
   },
   {
@@ -25,6 +26,7 @@ const FOOTER_GROUPS = [
     heading: "Company",
     links: [
       { href: "/about", label: "About" },
+      { href: "/blog", label: "Blog" },
       { href: "/pricing", label: "Pricing" },
       { href: "/contact", label: "Contact" },
     ],
