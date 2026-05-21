@@ -10,10 +10,12 @@ export const metadata: Metadata = {
 
 export default function SignInPage() {
   return (
-    <div className="border-border bg-card text-card-foreground w-full max-w-md rounded-xl border p-8 shadow-sm">
-      <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-      <p className="text-muted-foreground mt-1 text-sm">
-        Sign in with a magic link or Google. New here? Same form — we&apos;ll create your account.
+    <div className="border-border bg-card text-card-foreground w-full max-w-md rounded-2xl border p-8 shadow-sm backdrop-blur">
+      <h1 className="text-foreground text-2xl font-semibold tracking-tight">
+        <span className="text-gradient">Welcome back</span>
+      </h1>
+      <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+        Sign in with your email or username, a magic link, or Google.
       </p>
       <Suspense fallback={null}>
         <SignInForm />

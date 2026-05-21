@@ -9,6 +9,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         aria-hidden
         className="from-primary/10 via-background to-accent/5 pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br"
       />
+      <div aria-hidden className="spotlight pointer-events-none absolute inset-0 -z-10" />
+      <div
+        aria-hidden
+        className="dot-pattern pointer-events-none absolute inset-0 -z-10 opacity-50"
+      />
       <Link
         href="/"
         className="text-muted-foreground hover:text-foreground mb-8 inline-flex items-center gap-2 text-sm font-medium transition-colors"

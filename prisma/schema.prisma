@@ -81,6 +81,13 @@ model User {
   image         String?
   role          UserRole  @default(USER)
 
+  // Username / password login. `passwordHash` is null for OAuth-only or
+  // magic-link-only accounts. `username` is optional but unique when set.
+  // `etsyShopUrl` is profile-only — never used for scraping (no Etsy API).
+  username     String? @unique
+  passwordHash String?
+  etsyShopUrl  String?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?

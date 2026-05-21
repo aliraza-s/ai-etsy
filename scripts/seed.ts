@@ -1,12 +1,16 @@
 import "dotenv/config";
 import { PrismaClient, Tool, AIProvider, Plan, UserRole, type User } from "@prisma/client";
+import { hashPassword } from "../lib/password";
 
 const db = new PrismaClient();
 
 const ADMIN_EMAIL = "aliraza4043627@gmail.com";
+/** Shared password for all seeded accounts — dev only, never use this in prod. */
+const SEED_PASSWORD = "craftly-dev-2025";
 
 interface SeedUser {
   email: string;
+  username: string;
   name: string;
   role: UserRole;
   plan: Plan;
@@ -16,6 +20,7 @@ interface SeedUser {
 const SEED_USERS: SeedUser[] = [
   {
     email: ADMIN_EMAIL,
+    username: "admin",
     name: "Ali (Admin)",
     role: UserRole.ADMIN,
     plan: Plan.MAX,
@@ -23,6 +28,7 @@ const SEED_USERS: SeedUser[] = [
   },
   {
     email: "test-free@craftly.local",
+    username: "free",
     name: "Free Tester",
     role: UserRole.USER,
     plan: Plan.FREE,
@@ -30,6 +36,7 @@ const SEED_USERS: SeedUser[] = [
   },
   {
     email: "test-pro@craftly.local",
+    username: "pro",
     name: "Pro Tester",
     role: UserRole.USER,
     plan: Plan.PRO,
@@ -82,11 +89,24 @@ const SYSTEM_PROMPTS: Record<Tool, { provider: AIProvider; model: string; prompt
   },
 };
 
-async function seedUser(u: SeedUser): Promise<User> {
+async function seedUser(u: SeedUser, passwordHash: string): Promise<User> {
   const user = await db.user.upsert({
     where: { email: u.email },
-    update: { role: u.role, name: u.name, emailVerified: new Date() },
-    create: { email: u.email, name: u.name, role: u.role, emailVerified: new Date() },
+    update: {
+      role: u.role,
+      name: u.name,
+      username: u.username,
+      passwordHash,
+      emailVerified: new Date(),
+    },
+    create: {
+      email: u.email,
+      username: u.username,
+      name: u.name,
+      role: u.role,
+      passwordHash,
+      emailVerified: new Date(),
+    },
   });
 
   const nextMonth = new Date();
@@ -110,11 +130,12 @@ async function seedUser(u: SeedUser): Promise<User> {
 async function main() {
   console.log("→ Seeding database…\n");
 
+  const passwordHash = await hashPassword(SEED_PASSWORD);
   for (const u of SEED_USERS) {
     console.log(
       `  · ${u.role.padEnd(5)} · ${u.plan.padEnd(5)} · ${u.credits.toString().padStart(3)} cr · ${u.email}`,
     );
-    await seedUser(u);
+    await seedUser(u, passwordHash);
   }
 
   console.log("\n  · AIConfig rows for 7 tools");
@@ -140,16 +161,18 @@ async function main() {
   }
 
   console.log("\n✓ Seed complete.\n");
-  console.log("How to log in (dev mode, no email server needed):");
+  console.log("How to log in:");
   console.log("  1. pnpm dev");
   console.log("  2. Open http://localhost:3000/signin");
-  console.log("  3. Enter one of the emails above");
-  console.log("  4. The magic-link URL is printed to *this terminal* in cyan — click it.");
+  console.log("  3. Pick \"Email / username\" mode and use any account below.");
+  console.log("");
+  console.log(`Shared dev password: \x1b[33m${SEED_PASSWORD}\x1b[0m`);
   console.log("");
   console.log("Test accounts:");
   for (const u of SEED_USERS) {
+    const tag = u.role === "ADMIN" ? " [admin panel]" : "";
     console.log(
-      `  · ${u.email.padEnd(32)} → ${u.plan} plan, ${u.credits} credits${u.role === "ADMIN" ? ", admin panel" : ""}`,
+      `  · ${u.username.padEnd(8)} / ${u.email.padEnd(32)} → ${u.plan} plan, ${u.credits} cr${tag}`,
     );
   }
   console.log("");

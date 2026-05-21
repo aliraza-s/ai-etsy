@@ -7,6 +7,8 @@ import type { Provider } from "next-auth/providers";
 import type { UserRole } from "@prisma/client";
 import { Resend } from "resend";
 import { db } from "@/lib/db";
+import { verifyPassword } from "@/lib/password";
+import { signInSchema } from "@/lib/auth-schemas";
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "Craftly";
 const EMAIL_FROM = process.env.EMAIL_FROM ?? `${APP_NAME} <hello@example.com>`;
@@ -66,6 +68,59 @@ const devCredentialsProvider = Credentials({
   },
 });
 
+/**
+ * Username/email + password provider — works in both dev and prod.
+ *
+ * Accepts the same shape as `signInSchema`: an identifier (email OR username)
+ * and a password. Looks the user up by whichever the identifier resolves to,
+ * then verifies the scrypt hash. Returns `null` on any failure so Auth.js
+ * surfaces a generic CredentialsSignin error — never leak whether the
+ * account exists vs. wrong password.
+ */
+const passwordCredentialsProvider = Credentials({
+  id: "credentials",
+  name: "Email or username and password",
+  credentials: {
+    identifier: { label: "Email or username", type: "text" },
+    password: { label: "Password", type: "password" },
+  },
+  async authorize(input) {
+    const parsed = signInSchema.safeParse(input);
+    if (!parsed.success) return null;
+    const { identifier, password } = parsed.data;
+
+    const isEmail = identifier.includes("@");
+    const where = isEmail
+      ? { email: identifier.toLowerCase().trim() }
+      : { username: identifier.toLowerCase().trim() };
+
+    const user = await db.user.findUnique({
+      where,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        image: true,
+        role: true,
+        passwordHash: true,
+        deletedAt: true,
+      },
+    });
+    if (!user || user.deletedAt || !user.passwordHash) return null;
+
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) return null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name ?? undefined,
+      image: user.image ?? undefined,
+      role: user.role,
+    };
+  },
+});
+
 const providers: Provider[] = [
   Google({
     clientId: process.env.AUTH_GOOGLE_ID ?? "",
@@ -76,6 +131,7 @@ const providers: Provider[] = [
     from: EMAIL_FROM,
     sendVerificationRequest: sendMagicLink,
   }),
+  passwordCredentialsProvider,
 ];
 if (isDev) providers.push(devCredentialsProvider);
 
