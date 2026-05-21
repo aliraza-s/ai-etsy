@@ -63,13 +63,8 @@ export function ToolMarketingSections({
           title={`How to use the ${tool.name}`}
           description="Three steps. Under 30 seconds end-to-end."
         />
-        <div className="mt-12 sm:mt-16">
-          <HowItWorks
-            steps={content.steps.map((s, i) => ({
-              title: `${i + 1}. ${s.title}`,
-              body: s.body,
-            }))}
-          />
+        <div className="mt-12">
+          <HowItWorks steps={content.steps.map((s) => ({ title: s.title, body: s.body }))} />
         </div>
       </Section>
 

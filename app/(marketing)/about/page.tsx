@@ -5,6 +5,7 @@ import { Section, SectionHeader } from "@/components/marketing/section";
 import { Cta } from "@/components/marketing/cta";
 import { Faq } from "@/components/marketing/faq";
 import { JsonLd } from "@/components/marketing/json-ld";
+import { AboutIllustration } from "@/components/illustrations/page-illustrations";
 import { breadcrumbSchema, faqSchema } from "@/lib/seo/schemas";
 import { SITE } from "@/lib/seo/site";
 
@@ -101,19 +102,26 @@ export default function AboutPage() {
         ]}
       />
 
-      <Section className="pt-16 pb-8 sm:pt-20 lg:pt-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-primary font-mono text-xs font-medium tracking-wider uppercase">
-            About {SITE.name}
-          </p>
-          <h1 className="text-foreground mt-2 text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-            We make the boring parts of selling fast — so you can keep making the things.
-          </h1>
-          <p className="text-muted-foreground mt-6 text-lg text-balance">
-            {SITE.name} is an independent team of AI engineers and small-shop sellers. We build the
-            tools we wished existed when we were squinting at our own listings at 2 a.m. wondering
-            why nobody was finding them.
-          </p>
+      <Section className="relative isolate overflow-hidden pt-12 pb-6 sm:pt-16 lg:pt-20">
+        <div aria-hidden className="glow-bg pointer-events-none absolute inset-0 -z-10" />
+        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <p className="text-primary font-mono text-xs font-medium tracking-wider uppercase">
+              About {SITE.name}
+            </p>
+            <h1 className="text-foreground mt-2 text-3xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl">
+              <span className="text-gradient">We make the boring parts</span>
+              <br className="hidden sm:block" /> of selling fast.
+            </h1>
+            <p className="text-muted-foreground mt-4 text-sm text-balance sm:text-base">
+              {SITE.name} is an independent team of AI engineers and small-shop sellers. We build
+              the tools we wished existed when we were squinting at our own listings at 2 a.m.
+              wondering why nobody was finding them.
+            </p>
+          </div>
+          <div className="mx-auto flex w-full justify-center lg:justify-end">
+            <AboutIllustration />
+          </div>
         </div>
       </Section>
 

@@ -56,7 +56,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="bg-background text-foreground flex min-h-full flex-col">
+      <body
+        // Browser extensions (Bitdefender Anti-Tracker, password managers,
+        // etc.) inject attributes onto <body> before React hydrates. Without
+        // this, every page logs a hydration mismatch in dev consoles.
+        suppressHydrationWarning
+        className="bg-background text-foreground flex min-h-full flex-col"
+      >
         <a
           href="#main-content"
           className="bg-primary text-primary-foreground sr-only z-50 rounded-md px-4 py-2 text-sm font-medium focus:not-sr-only focus:fixed focus:top-4 focus:left-4"

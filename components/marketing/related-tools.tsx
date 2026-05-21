@@ -14,14 +14,18 @@ export function RelatedTools({ tools }: { tools: RelatedTool[] }) {
         <li key={tool.href}>
           <Link
             href={tool.href}
-            className="border-border bg-card text-card-foreground hover:border-primary/40 hover:bg-secondary/40 group flex h-full flex-col justify-between gap-3 rounded-xl border p-5 transition-colors"
+            className="border-border bg-card text-card-foreground card-hover group relative flex h-full flex-col justify-between gap-3 overflow-hidden rounded-2xl border p-5"
           >
-            <div>
-              <h3 className="text-foreground flex items-center gap-1.5 text-base font-semibold">
-                {tool.title}
+            <div
+              aria-hidden
+              className="from-primary/0 to-primary/5 pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            />
+            <div className="relative">
+              <h3 className="text-foreground flex items-center justify-between gap-1.5 text-base font-semibold">
+                <span>{tool.title}</span>
                 <ArrowUpRight
                   aria-hidden
-                  className="text-muted-foreground group-hover:text-foreground size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  className="text-muted-foreground group-hover:text-primary size-4 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                 />
               </h3>
               <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">{tool.body}</p>

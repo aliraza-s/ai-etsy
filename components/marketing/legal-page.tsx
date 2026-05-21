@@ -24,13 +24,13 @@ export function LegalPage({
   sections: LegalSection[];
 }) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
       <header className="mx-auto max-w-3xl text-center">
         <p className="text-primary font-mono text-xs font-medium tracking-wider uppercase">Legal</p>
-        <h1 className="text-foreground mt-2 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+        <h1 className="text-foreground mt-2 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
           {title}
         </h1>
-        <p className="text-muted-foreground mt-4 text-base sm:text-lg">{description}</p>
+        <p className="text-muted-foreground mt-3 text-sm sm:text-base">{description}</p>
         <p className="text-muted-foreground mt-3 font-mono text-xs">
           Last updated: <time dateTime={lastUpdated}>{lastUpdated}</time>
         </p>

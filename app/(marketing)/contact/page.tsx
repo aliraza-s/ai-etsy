@@ -76,15 +76,15 @@ export default function ContactPage() {
         ]}
       />
 
-      <Section className="pt-16 pb-8 sm:pt-20 lg:pt-24">
+      <Section className="pt-12 pb-6 sm:pt-16 lg:pt-20">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-primary font-mono text-xs font-medium tracking-wider uppercase">
             Contact
           </p>
-          <h1 className="text-foreground mt-2 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            We read every message.
+          <h1 className="text-foreground mt-2 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            <span className="text-gradient">We read every message.</span>
           </h1>
-          <p className="text-muted-foreground mt-4 text-base sm:text-lg">
+          <p className="text-muted-foreground mt-4 text-sm sm:text-base">
             A real human replies, usually within 24 hours. Bug reports, feature ideas, partnership
             asks, refund requests — all welcome.
           </p>

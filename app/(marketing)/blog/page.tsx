@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Rss } from "lucide-react";
 import { Section } from "@/components/marketing/section";
 import { JsonLd } from "@/components/marketing/json-ld";
+import { BlogIllustration } from "@/components/illustrations/page-illustrations";
 import { breadcrumbSchema } from "@/lib/seo/schemas";
 import { SITE } from "@/lib/seo/site";
 import { BLOG_POSTS } from "@/lib/content/blog";
@@ -35,24 +36,31 @@ export default function BlogIndexPage() {
         ])}
       />
 
-      <Section className="pt-16 pb-8 sm:pt-20 lg:pt-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-primary font-mono text-xs font-medium tracking-wider uppercase">
-            Blog
-          </p>
-          <h1 className="text-foreground mt-2 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Field-tested Etsy SEO, written by people who run shops.
-          </h1>
-          <p className="text-muted-foreground mt-4 text-base text-balance sm:text-lg">
-            Specific tactics, not generic advice. Updated as the platform changes.
-          </p>
-          <div className="mt-6 flex items-center justify-center">
-            <Link
-              href="/blog/feed.xml"
-              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-xs transition-colors"
-            >
-              <Rss className="size-3.5" aria-hidden /> RSS feed
-            </Link>
+      <Section className="relative isolate overflow-hidden pt-12 pb-6 sm:pt-16 lg:pt-20">
+        <div aria-hidden className="glow-bg pointer-events-none absolute inset-0 -z-10" />
+        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <p className="text-primary font-mono text-xs font-medium tracking-wider uppercase">
+              Blog
+            </p>
+            <h1 className="text-foreground mt-2 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              <span className="text-gradient">Field-tested Etsy SEO,</span>
+              <br className="hidden sm:block" /> written by people who run shops.
+            </h1>
+            <p className="text-muted-foreground mt-4 text-sm text-balance sm:text-base">
+              Specific tactics, not generic advice. Updated as the platform changes.
+            </p>
+            <div className="mt-5">
+              <Link
+                href="/blog/feed.xml"
+                className="border-border bg-card hover:bg-secondary text-muted-foreground hover:text-foreground inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-xs transition-colors"
+              >
+                <Rss className="size-3.5" aria-hidden /> Subscribe to RSS
+              </Link>
+            </div>
+          </div>
+          <div className="mx-auto flex w-full justify-center lg:justify-end">
+            <BlogIllustration />
           </div>
         </div>
       </Section>

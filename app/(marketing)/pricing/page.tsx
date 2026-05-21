@@ -3,9 +3,11 @@ import { Section, SectionHeader } from "@/components/marketing/section";
 import { Faq } from "@/components/marketing/faq";
 import { Cta } from "@/components/marketing/cta";
 import { JsonLd } from "@/components/marketing/json-ld";
+import { PricingIllustration } from "@/components/illustrations/page-illustrations";
 import { breadcrumbSchema, faqSchema } from "@/lib/seo/schemas";
 import { SITE } from "@/lib/seo/site";
 import { PricingTable } from "./pricing-table";
+import { Sparkles } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Pricing — Free, Pro, and Max plans",
@@ -54,12 +56,32 @@ export default function PricingPage() {
         ]}
       />
 
-      <Section>
-        <SectionHeader
-          eyebrow="Pricing"
-          title="Simple, credit-based pricing"
-          description="Start free. Upgrade only when you need more credits or the premium analyzer model."
-        />
+      <Section className="relative isolate overflow-hidden">
+        <div aria-hidden className="glow-bg pointer-events-none absolute inset-0 -z-10" />
+        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <p className="text-primary font-mono text-xs font-medium tracking-wider uppercase">
+              Pricing
+            </p>
+            <h1 className="text-foreground mt-2 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              <span className="text-gradient">Simple, credit-based pricing.</span>
+            </h1>
+            <p className="text-muted-foreground mt-4 max-w-md text-base text-balance sm:text-lg">
+              Start free. Upgrade only when you need more credits or the premium analyzer model.
+              Cancel any time.
+            </p>
+            <ul className="text-muted-foreground mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+              <li className="text-foreground inline-flex items-center gap-1.5">
+                <Sparkles className="text-primary size-3.5" aria-hidden /> No credit card to start
+              </li>
+              <li>· 14-day money-back</li>
+              <li>· Cancel any time</li>
+            </ul>
+          </div>
+          <div className="mx-auto flex w-full justify-center lg:justify-end">
+            <PricingIllustration />
+          </div>
+        </div>
         <div className="mt-12">
           <PricingTable />
         </div>

@@ -1,9 +1,41 @@
 import "dotenv/config";
-import { PrismaClient, Tool, AIProvider, Plan, UserRole } from "@prisma/client";
+import { PrismaClient, Tool, AIProvider, Plan, UserRole, type User } from "@prisma/client";
 
 const db = new PrismaClient();
 
 const ADMIN_EMAIL = "aliraza4043627@gmail.com";
+
+interface SeedUser {
+  email: string;
+  name: string;
+  role: UserRole;
+  plan: Plan;
+  credits: number;
+}
+
+const SEED_USERS: SeedUser[] = [
+  {
+    email: ADMIN_EMAIL,
+    name: "Ali (Admin)",
+    role: UserRole.ADMIN,
+    plan: Plan.MAX,
+    credits: 600,
+  },
+  {
+    email: "test-free@craftly.local",
+    name: "Free Tester",
+    role: UserRole.USER,
+    plan: Plan.FREE,
+    credits: 15,
+  },
+  {
+    email: "test-pro@craftly.local",
+    name: "Pro Tester",
+    role: UserRole.USER,
+    plan: Plan.PRO,
+    credits: 200,
+  },
+];
 
 const SYSTEM_PROMPTS: Record<Tool, { provider: AIProvider; model: string; prompt: string }> = {
   TAG_GENERATOR: {
@@ -50,37 +82,42 @@ const SYSTEM_PROMPTS: Record<Tool, { provider: AIProvider; model: string; prompt
   },
 };
 
-async function main() {
-  console.log("→ Seeding database…");
-
-  console.log("  · admin user", ADMIN_EMAIL);
-  const admin = await db.user.upsert({
-    where: { email: ADMIN_EMAIL },
-    update: { role: UserRole.ADMIN },
-    create: {
-      email: ADMIN_EMAIL,
-      role: UserRole.ADMIN,
-      emailVerified: new Date(),
-    },
+async function seedUser(u: SeedUser): Promise<User> {
+  const user = await db.user.upsert({
+    where: { email: u.email },
+    update: { role: u.role, name: u.name, emailVerified: new Date() },
+    create: { email: u.email, name: u.name, role: u.role, emailVerified: new Date() },
   });
 
-  console.log("  · subscription + credits for admin");
   const nextMonth = new Date();
   nextMonth.setMonth(nextMonth.getMonth() + 1);
 
   await db.subscription.upsert({
-    where: { userId: admin.id },
-    update: {},
-    create: { userId: admin.id, plan: Plan.MAX, status: "ACTIVE" },
+    where: { userId: user.id },
+    create: { userId: user.id, plan: u.plan, status: "ACTIVE" },
+    update: { plan: u.plan, status: "ACTIVE" },
   });
 
   await db.creditBalance.upsert({
-    where: { userId: admin.id },
-    update: {},
-    create: { userId: admin.id, credits: 600, resetsAt: nextMonth },
+    where: { userId: user.id },
+    create: { userId: user.id, credits: u.credits, resetsAt: nextMonth },
+    update: { credits: u.credits, resetsAt: nextMonth },
   });
 
-  console.log("  · AIConfig rows for 6 tools");
+  return user;
+}
+
+async function main() {
+  console.log("→ Seeding database…\n");
+
+  for (const u of SEED_USERS) {
+    console.log(
+      `  · ${u.role.padEnd(5)} · ${u.plan.padEnd(5)} · ${u.credits.toString().padStart(3)} cr · ${u.email}`,
+    );
+    await seedUser(u);
+  }
+
+  console.log("\n  · AIConfig rows for 7 tools");
   for (const [tool, cfg] of Object.entries(SYSTEM_PROMPTS) as [
     Tool,
     (typeof SYSTEM_PROMPTS)[Tool],
@@ -102,7 +139,20 @@ async function main() {
     });
   }
 
-  console.log("✓ Seed complete.");
+  console.log("\n✓ Seed complete.\n");
+  console.log("How to log in (dev mode, no email server needed):");
+  console.log("  1. pnpm dev");
+  console.log("  2. Open http://localhost:3000/signin");
+  console.log("  3. Enter one of the emails above");
+  console.log("  4. The magic-link URL is printed to *this terminal* in cyan — click it.");
+  console.log("");
+  console.log("Test accounts:");
+  for (const u of SEED_USERS) {
+    console.log(
+      `  · ${u.email.padEnd(32)} → ${u.plan} plan, ${u.credits} credits${u.role === "ADMIN" ? ", admin panel" : ""}`,
+    );
+  }
+  console.log("");
 }
 
 main()

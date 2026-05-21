@@ -64,10 +64,10 @@ export default function EventsCalendarPage() {
               <span className="bg-accent mr-2 h-1.5 w-1.5 rounded-full" />
               Free forever · no signup
             </span>
-            <h1 className="text-foreground text-3xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl">
+            <h1 className="text-foreground text-2xl font-semibold tracking-tight text-balance sm:text-3xl lg:text-4xl">
               {TOOL.heroTitle}
             </h1>
-            <p className="text-muted-foreground mx-auto mt-5 max-w-2xl text-base text-balance sm:text-lg">
+            <p className="text-muted-foreground mx-auto mt-4 max-w-2xl text-sm text-balance sm:text-base">
               {CONTENT.tldr}
             </p>
           </div>

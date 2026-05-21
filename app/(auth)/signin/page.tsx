@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SignInForm } from "./signin-form";
+import { DevQuickLogin } from "./dev-quick-login";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -17,6 +18,7 @@ export default function SignInPage() {
       <Suspense fallback={null}>
         <SignInForm />
       </Suspense>
+      <DevQuickLogin />
       <p className="text-muted-foreground mt-6 text-xs">
         By continuing you agree to our{" "}
         <a href="/terms" className="hover:text-foreground underline underline-offset-2">

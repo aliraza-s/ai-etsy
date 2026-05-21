@@ -3,6 +3,12 @@ import { notFound } from "next/navigation";
 import { Hero } from "@/components/marketing/hero";
 import { ToolMarketingSections } from "@/components/marketing/tool-marketing-sections";
 import { JsonLd } from "@/components/marketing/json-ld";
+import { HeroIllustration } from "@/components/illustrations/hero-illustration";
+import {
+  NicheIllustration,
+  CalculatorIllustration,
+  CalendarIllustration,
+} from "@/components/illustrations/page-illustrations";
 import {
   breadcrumbSchema,
   faqSchema,
@@ -92,9 +98,23 @@ export default async function ToolMarketingPage({ params }: { params: Promise<{ 
         primaryCta={{ href: "/signin", label: "Try it free" }}
         secondaryCta={{ href: "/pricing", label: "See pricing" }}
         trustSignals={trustSignals}
+        illustration={illustrationFor(tool.slug)}
       />
 
       <ToolMarketingSections tool={tool} content={content} />
     </>
   );
+}
+
+function illustrationFor(slug: ToolSlug) {
+  switch (slug) {
+    case "niche-finder":
+      return <NicheIllustration />;
+    case "fee-calculator":
+      return <CalculatorIllustration />;
+    case "events-calendar":
+      return <CalendarIllustration />;
+    default:
+      return <HeroIllustration />;
+  }
 }
