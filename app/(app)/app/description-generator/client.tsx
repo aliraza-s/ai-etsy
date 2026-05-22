@@ -1,11 +1,16 @@
 "use client";
 
+import { Smile, SmilePlus, Store } from "lucide-react";
 import { CopyButton, Textarea, ToolShell } from "@/components/app/tool-shell";
 import { cn } from "@/lib/utils";
 
 interface DescriptionInput extends Record<string, unknown> {
   bulletsText: string;
   tone: "friendly" | "professional" | "playful";
+  useEmoji: boolean;
+  wordCount: "short" | "medium" | "long";
+  aboutShop: string;
+  includeShop: boolean;
 }
 
 interface DescriptionOutput {
@@ -18,14 +23,27 @@ const TONES: { value: DescriptionInput["tone"]; label: string; hint: string }[] 
   { value: "playful", label: "Playful", hint: "Casual, witty" },
 ];
 
+const WORD_COUNTS: { value: DescriptionInput["wordCount"]; label: string; hint: string }[] = [
+  { value: "short", label: "Short", hint: "120-180 words" },
+  { value: "medium", label: "Medium", hint: "200-300 words" },
+  { value: "long", label: "Long", hint: "350-500 words" },
+];
+
 export function DescriptionGeneratorClient() {
   return (
     <ToolShell<DescriptionInput, DescriptionOutput>
       slug="description-generator"
       name="Description Generator"
-      blurb="180–280 word Etsy listing with hook, scannable bullets, and soft CTA. 3 credits."
+      blurb="Etsy listing copy with hook, scannable bullets, and soft CTA. Optional emoji + shop story. 3 credits."
       creditCost={3}
-      initialInput={{ bulletsText: "", tone: "friendly" }}
+      initialInput={{
+        bulletsText: "",
+        tone: "friendly",
+        useEmoji: false,
+        wordCount: "medium",
+        aboutShop: "",
+        includeShop: false,
+      }}
       transformBody={(input) => ({
         productBullets: input.bulletsText
           .split("\n")
@@ -33,6 +51,10 @@ export function DescriptionGeneratorClient() {
           .filter(Boolean)
           .slice(0, 12),
         tone: input.tone,
+        useEmoji: input.useEmoji,
+        wordCount: input.wordCount,
+        aboutShop: input.aboutShop.trim() || undefined,
+        includeShop: input.includeShop,
       })}
       renderForm={({ input, setField, submitting }) => (
         <>
@@ -48,6 +70,7 @@ export function DescriptionGeneratorClient() {
             rows={7}
             maxLength={2000}
           />
+
           <div>
             <p className="text-foreground mb-2 text-sm font-medium">Tone</p>
             <div className="grid grid-cols-3 gap-2">
@@ -71,6 +94,65 @@ export function DescriptionGeneratorClient() {
               ))}
             </div>
           </div>
+
+          <div>
+            <p className="text-foreground mb-2 text-sm font-medium">Length</p>
+            <div className="grid grid-cols-3 gap-2">
+              {WORD_COUNTS.map((wc) => (
+                <button
+                  key={wc.value}
+                  type="button"
+                  onClick={() => setField("wordCount", wc.value)}
+                  aria-pressed={input.wordCount === wc.value}
+                  disabled={submitting}
+                  className={cn(
+                    "rounded-md border p-2.5 text-left transition-colors",
+                    input.wordCount === wc.value
+                      ? "border-primary bg-primary/5"
+                      : "border-border bg-background hover:bg-secondary",
+                  )}
+                >
+                  <p className="text-foreground text-sm font-medium">{wc.label}</p>
+                  <p className="text-muted-foreground text-xs">{wc.hint}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <ToggleRow
+            id="useEmoji"
+            checked={input.useEmoji}
+            onChange={(v) => setField("useEmoji", v)}
+            disabled={submitting}
+            icon={input.useEmoji ? <SmilePlus className="size-4" /> : <Smile className="size-4" />}
+            title="Add emoji"
+            hint="Sprinkles tasteful emoji into the hook and at the start of each bullet."
+          />
+
+          <ToggleRow
+            id="includeShop"
+            checked={input.includeShop}
+            onChange={(v) => setField("includeShop", v)}
+            disabled={submitting}
+            icon={<Store className="size-4" />}
+            title="Mention my shop"
+            hint="Weaves 1-2 sentences from the box below into the closing paragraph."
+          />
+
+          {input.includeShop && (
+            <Textarea
+              label="About your shop"
+              value={input.aboutShop}
+              onChange={(v) => setField("aboutShop", v)}
+              placeholder={
+                "Small-batch candle studio in Portland, OR. Every order is hand-poured the day it ships. Free domestic shipping over $35."
+              }
+              hint="Story, location, USP, shipping policy — whatever makes your shop yours. AI rewrites it; you don't need it polished."
+              disabled={submitting}
+              rows={4}
+              maxLength={800}
+            />
+          )}
         </>
       )}
       renderOutput={(output) => (
@@ -89,5 +171,69 @@ export function DescriptionGeneratorClient() {
         </div>
       )}
     />
+  );
+}
+
+function ToggleRow({
+  id,
+  checked,
+  onChange,
+  disabled,
+  icon,
+  title,
+  hint,
+}: {
+  id: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  icon: React.ReactNode;
+  title: string;
+  hint: string;
+}) {
+  return (
+    <label
+      htmlFor={id}
+      className={cn(
+        "border-border bg-background hover:bg-secondary/60 flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors",
+        checked && "border-primary/40 bg-primary/5",
+        disabled && "pointer-events-none opacity-60",
+      )}
+    >
+      <span
+        className={cn(
+          "mt-0.5 inline-flex size-8 flex-none items-center justify-center rounded-md",
+          checked ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+        )}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-foreground text-sm font-medium">{title}</p>
+        <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">{hint}</p>
+      </div>
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        disabled={disabled}
+        className="peer sr-only"
+      />
+      <span
+        aria-hidden
+        className={cn(
+          "relative mt-1 inline-flex h-5 w-9 flex-none items-center rounded-full border transition-colors",
+          checked ? "border-primary bg-primary" : "border-border bg-muted",
+        )}
+      >
+        <span
+          className={cn(
+            "bg-background block size-4 rounded-full shadow-sm transition-transform",
+            checked ? "translate-x-4" : "translate-x-0.5",
+          )}
+        />
+      </span>
+    </label>
   );
 }

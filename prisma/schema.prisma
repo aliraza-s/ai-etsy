@@ -222,6 +222,33 @@ model ApiKey {
   updatedBy         String?
 }
 
+// ─── Admin: payment provider config (Paddle / Stripe / PayPal / LS) ──────────
+
+enum PaymentProvider {
+  PADDLE
+  STRIPE
+  PAYPAL
+  LEMON_SQUEEZY
+}
+
+/// Payment-provider settings. The encryptedConfig blob holds a JSON object
+/// shaped per provider — its fields are validated server-side before being
+/// AES-256-GCM-encrypted on save. `lastFour` is the last 4 chars of the
+/// primary secret (e.g. Stripe sk_live_…XXXX) for display only.
+model PaymentProviderConfig {
+  id              String          @id @default(cuid())
+  provider        PaymentProvider @unique
+  isEnabled       Boolean         @default(false)
+  /// "test" (sandbox) or "live"
+  mode            String          @default("test")
+  /// AES-256-GCM ciphertext of the per-provider JSON config
+  encryptedConfig String          @db.Text
+  /// Last 4 chars of the primary secret (display only)
+  lastFour        String?
+  updatedAt       DateTime        @updatedAt
+  updatedBy       String?
+}
+
 enum AnnouncementAudience {
   ALL
   FREE

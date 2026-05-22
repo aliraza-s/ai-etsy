@@ -4,6 +4,13 @@ import { AIProvider } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import { encrypt } from "@/lib/encryption";
+import { rateLimit } from "@/lib/rate-limit";
+import {
+  EncryptionKeyMisconfiguredError,
+  assertEncryptionKey,
+  auditLog,
+  noStoreHeaders,
+} from "@/lib/security";
 
 export const runtime = "nodejs";
 
@@ -25,16 +32,53 @@ export async function PUT(request: Request, ctx: { params: Promise<{ provider: s
   const guard = await requireAdmin();
   if (!guard.ok) return guard.response;
 
+  const rl = rateLimit(`admin-api-keys:${guard.session.userId}`, {
+    capacity: 10,
+    refillPerSecond: 10 / 60,
+  });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "too_many_requests" },
+      {
+        status: 429,
+        headers: { ...noStoreHeaders, "Retry-After": String(rl.retryAfterSeconds) },
+      },
+    );
+  }
+
+  try {
+    assertEncryptionKey();
+  } catch (err) {
+    if (err instanceof EncryptionKeyMisconfiguredError) {
+      return NextResponse.json(
+        { error: "server_misconfigured", message: "ENCRYPTION_KEY is missing on the server." },
+        { status: 503, headers: noStoreHeaders },
+      );
+    }
+    throw err;
+  }
+
   const { provider: slug } = await ctx.params;
   const provider = parseProvider(slug);
-  if (!provider) return NextResponse.json({ error: "unknown_provider" }, { status: 404 });
+  if (!provider)
+    return NextResponse.json(
+      { error: "unknown_provider" },
+      { status: 404, headers: noStoreHeaders },
+    );
 
   const body = await request.json().catch(() => null);
   const parsed = putSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "validation_failed", issues: parsed.error.issues },
-      { status: 400 },
+      {
+        error: "validation_failed",
+        // Slim issues to path+message; never echo the received value back.
+        issues: parsed.error.issues.slice(0, 5).map((i) => ({
+          path: i.path.join("."),
+          message: i.message,
+        })),
+      },
+      { status: 400, headers: noStoreHeaders },
     );
   }
 
@@ -44,7 +88,7 @@ export async function PUT(request: Request, ctx: { params: Promise<{ provider: s
   if (!key && !existing) {
     return NextResponse.json(
       { error: "validation_failed", message: "No existing key — paste one to save." },
-      { status: 400 },
+      { status: 400, headers: noStoreHeaders },
     );
   }
 
@@ -69,6 +113,12 @@ export async function PUT(request: Request, ctx: { params: Promise<{ provider: s
         updatedBy: guard.session.email,
       },
     });
+    auditLog({
+      actor: guard.session.email || guard.session.userId,
+      action: "ai-key.rotate",
+      target: provider,
+      meta: { isActive, monthlyBudgetUsd, lastFour },
+    });
   } else {
     await db.apiKey.update({
       where: { provider },
@@ -78,21 +128,52 @@ export async function PUT(request: Request, ctx: { params: Promise<{ provider: s
         updatedBy: guard.session.email,
       },
     });
+    auditLog({
+      actor: guard.session.email || guard.session.userId,
+      action: "ai-key.flags",
+      target: provider,
+      meta: { isActive, monthlyBudgetUsd },
+    });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true }, { headers: noStoreHeaders });
 }
 
 export async function DELETE(_request: Request, ctx: { params: Promise<{ provider: string }> }) {
   const guard = await requireAdmin();
   if (!guard.ok) return guard.response;
 
+  const rl = rateLimit(`admin-api-keys:${guard.session.userId}`, {
+    capacity: 10,
+    refillPerSecond: 10 / 60,
+  });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "too_many_requests" },
+      {
+        status: 429,
+        headers: { ...noStoreHeaders, "Retry-After": String(rl.retryAfterSeconds) },
+      },
+    );
+  }
+
   const { provider: slug } = await ctx.params;
   const provider = parseProvider(slug);
-  if (!provider) return NextResponse.json({ error: "unknown_provider" }, { status: 404 });
+  if (!provider)
+    return NextResponse.json(
+      { error: "unknown_provider" },
+      { status: 404, headers: noStoreHeaders },
+    );
 
   await db.apiKey.delete({ where: { provider } }).catch(() => {
     // already gone — idempotent
   });
-  return NextResponse.json({ ok: true });
+
+  auditLog({
+    actor: guard.session.email || guard.session.userId,
+    action: "ai-key.delete",
+    target: provider,
+  });
+
+  return NextResponse.json({ ok: true }, { headers: noStoreHeaders });
 }

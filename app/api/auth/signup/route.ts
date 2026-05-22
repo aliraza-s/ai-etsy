@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { signUpSchema } from "@/lib/auth-schemas";
 import { rateLimit, clientKey } from "@/lib/rate-limit";
+import { auditLog, noStoreHeaders } from "@/lib/security";
 
 /**
  * POST /api/auth/signup
@@ -27,7 +28,10 @@ export async function POST(request: Request) {
   if (!limit.ok) {
     return NextResponse.json(
       { error: "too_many_requests" },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+      {
+        status: 429,
+        headers: { ...noStoreHeaders, "Retry-After": String(limit.retryAfterSeconds) },
+      },
     );
   }
 
@@ -35,7 +39,7 @@ export async function POST(request: Request) {
   try {
     raw = await request.json();
   } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: noStoreHeaders });
   }
 
   const parsed = signUpSchema.safeParse(raw);
@@ -43,12 +47,13 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "validation_failed",
+        // Strip `received` / extras — only path + message ever leaves the server.
         issues: parsed.error.issues.slice(0, 5).map((i) => ({
           path: i.path.join("."),
           message: i.message,
         })),
       },
-      { status: 400 },
+      { status: 400, headers: noStoreHeaders },
     );
   }
   const { username, email, password, etsyShopUrl } = parsed.data;
@@ -60,7 +65,7 @@ export async function POST(request: Request) {
   nextMonth.setMonth(nextMonth.getMonth() + 1);
 
   try {
-    await db.user.create({
+    const created = await db.user.create({
       data: {
         email: normalizedEmail,
         username: normalizedUsername,
@@ -72,18 +77,34 @@ export async function POST(request: Request) {
       },
       select: { id: true },
     });
+    auditLog({
+      actor: created.id,
+      action: "user.signup",
+      target: created.id,
+      meta: { ip: clientKey(request, "signup") },
+    });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-      // Unique constraint hit — could be email or username. Don't echo which.
+      // Unique constraint hit. We deliberately do NOT echo which field
+      // collided — that would enable email/username enumeration. The UI
+      // shows a generic "already taken" message; users can iterate on
+      // username themselves. The internal audit log records the field so
+      // operators can still debug.
       const target = (err.meta?.target as string[] | undefined) ?? [];
       const field = target.includes("username") ? "username" : "email";
+      auditLog({
+        actor: "anonymous",
+        action: "user.signup.collision",
+        target: field,
+        meta: { ip: clientKey(request, "signup") },
+      });
       return NextResponse.json(
-        { error: "already_exists", field, message: `That ${field} is already taken.` },
-        { status: 409 },
+        { error: "already_exists", message: "That email or username is already taken." },
+        { status: 409, headers: noStoreHeaders },
       );
     }
     throw err;
   }
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return NextResponse.json({ ok: true }, { status: 201, headers: noStoreHeaders });
 }

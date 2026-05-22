@@ -19,7 +19,6 @@ function safeCallbackUrl(raw: string | null): string {
 
 interface SignupErrorBody {
   error?: string;
-  field?: string;
   message?: string;
   issues?: { path: string; message: string }[];
 }
@@ -46,10 +45,12 @@ export function SignUpForm() {
 
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as SignupErrorBody;
-      if (body.error === "already_exists" && body.field) {
-        form.setError(body.field as keyof SignUpInput, {
-          message: body.message ?? "Already taken",
-        });
+      if (body.error === "already_exists") {
+        // Server intentionally doesn't reveal which field collided.
+        setServerError(
+          body.message ??
+            "That email or username is already taken — try signing in or pick a different one.",
+        );
         return;
       }
       if (body.error === "validation_failed" && body.issues) {

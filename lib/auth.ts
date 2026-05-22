@@ -9,6 +9,8 @@ import { Resend } from "resend";
 import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { signInSchema } from "@/lib/auth-schemas";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { dummyVerifyPassword } from "@/lib/security";
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "Craftly";
 const EMAIL_FROM = process.env.EMAIL_FROM ?? `${APP_NAME} <hello@example.com>`;
@@ -71,11 +73,14 @@ const devCredentialsProvider = Credentials({
 /**
  * Username/email + password provider — works in both dev and prod.
  *
- * Accepts the same shape as `signInSchema`: an identifier (email OR username)
- * and a password. Looks the user up by whichever the identifier resolves to,
- * then verifies the scrypt hash. Returns `null` on any failure so Auth.js
- * surfaces a generic CredentialsSignin error — never leak whether the
- * account exists vs. wrong password.
+ * Defenses:
+ *  - Per-IP and per-identifier rate-limits to slow brute force.
+ *  - Always runs scrypt (real or dummy) so response time is constant whether
+ *    the identifier exists or not — defeats user-enumeration via timing.
+ *  - Returns `null` on every failure so Auth.js surfaces a single generic
+ *    `CredentialsSignin` error to the client.
+ *  - Wraps DB lookup in try/catch so an unexpected error doesn't bubble out
+ *    a stack trace.
  */
 const passwordCredentialsProvider = Credentials({
   id: "credentials",
@@ -84,29 +89,64 @@ const passwordCredentialsProvider = Credentials({
     identifier: { label: "Email or username", type: "text" },
     password: { label: "Password", type: "password" },
   },
-  async authorize(input) {
+  async authorize(input, request) {
     const parsed = signInSchema.safeParse(input);
-    if (!parsed.success) return null;
+    if (!parsed.success) {
+      // Still burn cycles so the early-reject doesn't leak via timing.
+      await dummyVerifyPassword(
+        typeof input?.password === "string" ? input.password : "",
+      );
+      return null;
+    }
     const { identifier, password } = parsed.data;
+    const normalized = identifier.toLowerCase().trim();
 
-    const isEmail = identifier.includes("@");
-    const where = isEmail
-      ? { email: identifier.toLowerCase().trim() }
-      : { username: identifier.toLowerCase().trim() };
+    // Rate-limit: per-IP (broad burst control) + per-identifier (per-account
+    // brute-force throttle). Both buckets must pass.
+    const req = request as unknown as Request;
+    const ipKey = clientKey(req, "signin");
+    const idKey = `signin:id:${normalized}`;
+    const ipLimit = rateLimit(ipKey, { capacity: 10, refillPerSecond: 10 / 60 });
+    const idLimit = rateLimit(idKey, { capacity: 5, refillPerSecond: 5 / 300 });
+    if (!ipLimit.ok || !idLimit.ok) {
+      // Still pay scrypt cost so the throttled path is indistinguishable.
+      await dummyVerifyPassword(password);
+      return null;
+    }
 
-    const user = await db.user.findUnique({
-      where,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        image: true,
-        role: true,
-        passwordHash: true,
-        deletedAt: true,
-      },
-    });
-    if (!user || user.deletedAt || !user.passwordHash) return null;
+    const isEmail = normalized.includes("@");
+    const where = isEmail ? { email: normalized } : { username: normalized };
+
+    let user: {
+      id: string;
+      email: string;
+      name: string | null;
+      image: string | null;
+      role: UserRole;
+      passwordHash: string | null;
+      deletedAt: Date | null;
+    } | null = null;
+    try {
+      user = await db.user.findUnique({
+        where,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          image: true,
+          role: true,
+          passwordHash: true,
+          deletedAt: true,
+        },
+      });
+    } catch {
+      // DB error — fall through to dummy verify so timing stays constant.
+    }
+
+    if (!user || user.deletedAt || !user.passwordHash) {
+      await dummyVerifyPassword(password);
+      return null;
+    }
 
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) return null;

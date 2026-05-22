@@ -21,6 +21,10 @@ export const keywordGeneratorInput = z.object({
 export const descriptionGeneratorInput = z.object({
   productBullets: z.array(z.string().trim().min(2).max(200)).min(1).max(12),
   tone: z.enum(["friendly", "professional", "playful"]).default("friendly"),
+  useEmoji: z.boolean().default(false),
+  wordCount: z.enum(["short", "medium", "long"]).default("medium"),
+  aboutShop: z.string().trim().max(800).optional(),
+  includeShop: z.boolean().default(false),
 });
 
 export const listingAnalyzerInput = z.object({
@@ -80,10 +84,10 @@ export const keywordGeneratorOutput = z.object({
 export const descriptionGeneratorOutput = z.object({
   description: z
     .string()
-    .min(150)
-    .max(2000)
+    .min(120)
+    .max(4000)
     .describe(
-      "180-280 word Etsy product description with first-line hook, scannable bullets, and soft CTA.",
+      "Etsy product description with first-line hook, scannable bullets, and soft CTA. Length and emoji usage controlled by the user prompt.",
     ),
 });
 
@@ -295,11 +299,31 @@ export function buildUserPrompt(tool: Tool, input: unknown): string {
     }
     case "DESCRIPTION_GENERATOR": {
       const i = descriptionGeneratorInput.parse(input);
+      const targetWords = {
+        short: "120-180 words",
+        medium: "200-300 words",
+        long: "350-500 words",
+      }[i.wordCount];
+      const emojiRule = i.useEmoji
+        ? "Include tasteful emoji at the start of each bullet and sparingly in the hook — never more than one per line."
+        : "Do not use emoji anywhere in the output.";
+      const shopBlock =
+        i.includeShop && i.aboutShop
+          ? [
+              "",
+              "About the shop (weave 1-2 sentences naturally into the closing paragraph — never as a separate 'About' section, never copy-pasted verbatim):",
+              i.aboutShop,
+            ].join("\n")
+          : "";
       return [
         `Tone: ${i.tone}`,
-        `Product bullets:\n- ${i.productBullets.join("\n- ")}`,
-        "Write an Etsy listing description, 180-280 words. Open with a first-line hook describing appeal (not features). Then bullets for features. End with a soft CTA.",
-      ].join("\n\n");
+        `Target length: ${targetWords}.`,
+        emojiRule,
+        `Product bullets:\n- ${i.productBullets.join("\n- ")}${shopBlock}`,
+        "Write an Etsy listing description at the target length above. Open with a first-line hook describing appeal (not features). Then 3-6 scannable bullets for features and materials. End with a soft CTA.",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
     }
     case "LISTING_ANALYZER": {
       const i = listingAnalyzerInput.parse(input);
