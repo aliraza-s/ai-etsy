@@ -34,8 +34,8 @@ function HeroSvg({ className }: { className?: string }) {
       <svg viewBox="0 0 400 300" className="h-full w-full overflow-visible">
         <defs>
           <linearGradient id="hero-gradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(0.585 0.12 191)" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="oklch(0.77 0.16 70)" stopOpacity="0.12" />
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.12" />
           </linearGradient>
           <linearGradient id="card-gradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--card)" />
@@ -68,12 +68,12 @@ function HeroSvg({ className }: { className?: string }) {
             cy="150"
             r="110"
             fill="none"
-            stroke="oklch(0.585 0.12 191)"
+            stroke="var(--primary)"
             strokeOpacity="0.25"
             strokeWidth="1"
             strokeDasharray="3 5"
           />
-          <circle cx="310" cy="150" r="4" fill="oklch(0.77 0.16 70)" />
+          <circle cx="310" cy="150" r="4" fill="var(--accent)" />
         </g>
 
         <g
@@ -97,7 +97,7 @@ function HeroSvg({ className }: { className?: string }) {
             width="106"
             height="44"
             rx="6"
-            fill="oklch(0.585 0.12 191)"
+            fill="var(--primary)"
             fillOpacity="0.12"
           />
           <g
@@ -109,7 +109,7 @@ function HeroSvg({ className }: { className?: string }) {
           >
             <path
               d="M200 119 L203 127 L211 130 L203 133 L200 141 L197 133 L189 130 L197 127 Z"
-              fill="oklch(0.585 0.12 191)"
+              fill="var(--primary)"
             />
           </g>
           <rect
@@ -157,7 +157,7 @@ function HeroSvg({ className }: { className?: string }) {
             fill="var(--card)"
             stroke="var(--border)"
           />
-          <circle cx="68" cy="75" r="3.5" fill="oklch(0.77 0.16 70)" />
+          <circle cx="68" cy="75" r="3.5" fill="var(--accent)" />
           <rect
             x="78"
             y="71"
@@ -185,7 +185,7 @@ function HeroSvg({ className }: { className?: string }) {
             fill="var(--card)"
             stroke="var(--border)"
           />
-          <circle cx="274" cy="223" r="3.5" fill="oklch(0.585 0.12 191)" />
+          <circle cx="274" cy="223" r="3.5" fill="var(--primary)" />
           <rect
             x="284"
             y="219"
@@ -210,9 +210,9 @@ function HeroSvg({ className }: { className?: string }) {
             width="70"
             height="36"
             rx="10"
-            fill="oklch(0.585 0.12 191)"
+            fill="var(--primary)"
             fillOpacity="0.12"
-            stroke="oklch(0.585 0.12 191)"
+            stroke="var(--primary)"
             strokeOpacity="0.4"
           />
           <text
@@ -222,7 +222,7 @@ function HeroSvg({ className }: { className?: string }) {
             fontFamily="var(--font-mono)"
             fontSize="11"
             fontWeight="600"
-            fill="oklch(0.585 0.12 191)"
+            fill="var(--primary)"
           >
             ai ✨
           </text>
@@ -232,7 +232,7 @@ function HeroSvg({ className }: { className?: string }) {
           className="craftly-anim"
           d="M 315 108 Q 280 130 220 140"
           fill="none"
-          stroke="oklch(0.585 0.12 191)"
+          stroke="var(--primary)"
           strokeOpacity="0.4"
           strokeWidth="1.5"
           strokeDasharray="4 4"

@@ -23,18 +23,23 @@ interface OgInput {
   subtitle?: string;
   /** ASCII-safe glyph for the top-left badge (e.g. "C", "$", "+", "/"). */
   glyph?: string;
+  /**
+   * Visual accent — names retained ("teal" / "amber") for backwards-compat with
+   * existing callers but colors now resolve to the new terracotta / sage palette.
+   */
   accent?: "teal" | "amber";
 }
 
-const TEAL = "#0D9488";
-const AMBER = "#F59E0B";
-const ZINC_50 = "#FAFAFA";
-const ZINC_900 = "#18181B";
-const ZINC_700 = "#3F3F46";
-const ZINC_400 = "#A1A1AA";
+const TERRACOTTA = "#D7765A"; // primary brand
+const SAGE = "#5DA8A0"; // accent (was the "teal" slot)
+const CREAM_50 = "#FBF9F6";
+const CREAM_100 = "#F2EFEA";
+const INK_900 = "#1A1612";
+const INK_700 = "#403933";
+const INK_400 = "#A39A91";
 
 export function ogImage(input: OgInput): ImageResponse {
-  const accentColor = input.accent === "amber" ? AMBER : TEAL;
+  const accentColor = input.accent === "amber" ? TERRACOTTA : SAGE;
 
   return new ImageResponse(
     <div
@@ -43,10 +48,10 @@ export function ogImage(input: OgInput): ImageResponse {
         width: "100%",
         display: "flex",
         flexDirection: "column",
-        background: `linear-gradient(135deg, ${ZINC_50} 0%, #F4F4F5 60%, ${accentColor}14 100%)`,
+        background: `linear-gradient(135deg, ${CREAM_50} 0%, ${CREAM_100} 60%, ${accentColor}14 100%)`,
         padding: "64px",
         fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif",
-        color: ZINC_900,
+        color: INK_900,
         position: "relative",
       }}
     >
@@ -117,7 +122,7 @@ export function ogImage(input: OgInput): ImageResponse {
             lineHeight: 1.05,
             letterSpacing: "-0.02em",
             margin: 0,
-            color: ZINC_900,
+            color: INK_900,
           }}
         >
           {input.title}
@@ -128,7 +133,7 @@ export function ogImage(input: OgInput): ImageResponse {
               fontSize: 32,
               lineHeight: 1.35,
               margin: 0,
-              color: ZINC_700,
+              color: INK_700,
               maxWidth: 980,
             }}
           >
@@ -151,7 +156,7 @@ export function ogImage(input: OgInput): ImageResponse {
             width: 36,
             height: 36,
             borderRadius: 10,
-            background: TEAL,
+            background: TERRACOTTA,
             color: "white",
             display: "flex",
             alignItems: "center",
@@ -163,7 +168,7 @@ export function ogImage(input: OgInput): ImageResponse {
           C
         </div>
         <span style={{ fontSize: 26, fontWeight: 700, color: ZINC_900 }}>{SITE.name}</span>
-        <span style={{ fontSize: 22, color: ZINC_400, marginLeft: 4 }}>· {SITE.tagline}</span>
+        <span style={{ fontSize: 22, color: INK_400, marginLeft: 4 }}>· {SITE.tagline}</span>
       </div>
     </div>,
     { ...OG_SIZE },

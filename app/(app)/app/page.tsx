@@ -87,11 +87,7 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       {/* Welcome row — text + small activity illustration */}
       <section className="border-border bg-card relative isolate mb-8 grid items-center gap-6 overflow-hidden rounded-2xl border p-6 shadow-sm sm:p-8 lg:grid-cols-[1.2fr_1fr]">
-        <div aria-hidden className="spotlight pointer-events-none absolute inset-0 -z-10" />
-        <div
-          aria-hidden
-          className="dot-pattern pointer-events-none absolute inset-0 -z-10 opacity-40"
-        />
+        <div aria-hidden className="mesh-bg pointer-events-none absolute inset-0 -z-10" />
         <div>
           <span className="border-border/70 bg-background/70 text-muted-foreground mb-3 inline-flex items-center gap-2 rounded-full border px-2.5 py-0.5 text-[11px] font-medium backdrop-blur">
             <span className="live-dot" aria-hidden />

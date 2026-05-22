@@ -8,7 +8,12 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Runtime queries — use a pooled connection (Neon's `-pooler` host or PgBouncer).
   url      = env("DATABASE_URL")
+  // Migrations bypass the pooler so DDL statements work. Set this to the
+  // non-pooled connection string in production; safe to omit in local dev
+  // (Prisma falls back to `url`).
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 // ─── Auth.js v5 tables ───────────────────────────────────────────────────────

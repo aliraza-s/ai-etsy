@@ -88,7 +88,7 @@ function StepPasteSvg({ className }: { className?: string }) {
           y="104"
           width="2"
           height="14"
-          fill="oklch(0.585 0.12 191)"
+          fill="var(--primary)"
           className="step-anim"
           style={{ animation: "step-blink 1.2s ease-in-out infinite" }}
         />
@@ -99,25 +99,25 @@ function StepPasteSvg({ className }: { className?: string }) {
         width="34"
         height="10"
         rx="2"
-        fill="oklch(0.585 0.12 191)"
+        fill="var(--primary)"
         opacity="0.18"
       />
 
       {/* Paste icon corner */}
       <g transform="translate(140,130)">
-        <rect x="0" y="0" width="20" height="22" rx="3" fill="oklch(0.77 0.16 70)" opacity="0.18" />
+        <rect x="0" y="0" width="20" height="22" rx="3" fill="var(--accent)" opacity="0.18" />
         <rect
           x="4"
           y="-3"
           width="12"
           height="5"
           rx="1.5"
-          fill="oklch(0.77 0.16 70)"
+          fill="var(--accent)"
           opacity="0.4"
         />
-        <rect x="4" y="6" width="12" height="2" rx="1" fill="oklch(0.77 0.16 70)" />
-        <rect x="4" y="10" width="8" height="2" rx="1" fill="oklch(0.77 0.16 70)" />
-        <rect x="4" y="14" width="10" height="2" rx="1" fill="oklch(0.77 0.16 70)" />
+        <rect x="4" y="6" width="12" height="2" rx="1" fill="var(--accent)" />
+        <rect x="4" y="10" width="8" height="2" rx="1" fill="var(--accent)" />
+        <rect x="4" y="14" width="10" height="2" rx="1" fill="var(--accent)" />
       </g>
     </StepShell>
   );
@@ -139,8 +139,8 @@ function StepGenerateSvg({ className }: { className?: string }) {
     <StepShell className={className}>
       <defs>
         <linearGradient id="ai-glow" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="oklch(0.585 0.12 191)" />
-          <stop offset="100%" stopColor="oklch(0.77 0.16 70)" />
+          <stop offset="0%" stopColor="var(--primary)" />
+          <stop offset="100%" stopColor="var(--accent)" />
         </linearGradient>
       </defs>
 
@@ -177,7 +177,7 @@ function StepGenerateSvg({ className }: { className?: string }) {
         cx="60"
         cy="58"
         r="3"
-        fill="oklch(0.77 0.16 70)"
+        fill="var(--accent)"
         className="step-anim"
         style={{ animation: "step-blink 1.8s ease-in-out infinite" }}
       />
@@ -185,7 +185,7 @@ function StepGenerateSvg({ className }: { className?: string }) {
         cx="150"
         cy="138"
         r="2.5"
-        fill="oklch(0.585 0.12 191)"
+        fill="var(--primary)"
         className="step-anim"
         style={{ animation: "step-blink 2.2s ease-in-out infinite", animationDelay: "-0.6s" }}
       />
@@ -193,7 +193,7 @@ function StepGenerateSvg({ className }: { className?: string }) {
         cx="148"
         cy="62"
         r="2"
-        fill="oklch(0.77 0.16 70)"
+        fill="var(--accent)"
         className="step-anim"
         style={{ animation: "step-blink 2s ease-in-out infinite", animationDelay: "-1s" }}
       />
@@ -232,7 +232,7 @@ function StepRankSvg({ className }: { className?: string }) {
         width="14"
         height="22"
         rx="2"
-        fill="oklch(0.585 0.12 191)"
+        fill="var(--primary)"
         opacity="0.4"
       />
       <rect
@@ -241,7 +241,7 @@ function StepRankSvg({ className }: { className?: string }) {
         width="14"
         height="36"
         rx="2"
-        fill="oklch(0.585 0.12 191)"
+        fill="var(--primary)"
         opacity="0.6"
       />
       <rect
@@ -250,7 +250,7 @@ function StepRankSvg({ className }: { className?: string }) {
         width="14"
         height="56"
         rx="2"
-        fill="oklch(0.585 0.12 191)"
+        fill="var(--primary)"
         opacity="0.8"
       />
       <rect
@@ -259,7 +259,7 @@ function StepRankSvg({ className }: { className?: string }) {
         width="14"
         height="78"
         rx="2"
-        fill="oklch(0.585 0.12 191)"
+        fill="var(--primary)"
         className="step-anim"
         style={{
           transformOrigin: "129px 142px",
@@ -271,7 +271,7 @@ function StepRankSvg({ className }: { className?: string }) {
       <path
         d="M52 132 L74 116 L96 96 L118 76 L138 60"
         fill="none"
-        stroke="oklch(0.77 0.16 70)"
+        stroke="var(--accent)"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -280,7 +280,7 @@ function StepRankSvg({ className }: { className?: string }) {
         className="step-anim"
         style={{ animation: "step-check 3s ease-in-out infinite alternate" }}
       />
-      <circle cx="138" cy="60" r="4" fill="oklch(0.77 0.16 70)" />
+      <circle cx="138" cy="60" r="4" fill="var(--accent)" />
     </StepShell>
   );
 }

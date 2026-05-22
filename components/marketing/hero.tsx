@@ -40,16 +40,9 @@ export function Hero({
         className,
       )}
     >
-      {/* Layered ambient background — gradient + spotlight + dot pattern. */}
-      <div
-        aria-hidden
-        className="from-primary/8 via-background to-accent/5 pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br"
-      />
+      {/* Layered ambient background — mesh blobs + soft spotlight halo. */}
+      <div aria-hidden className="mesh-bg pointer-events-none absolute inset-0 -z-10" />
       <div aria-hidden className="spotlight pointer-events-none absolute inset-0 -z-10" />
-      <div
-        aria-hidden
-        className="dot-pattern pointer-events-none absolute inset-0 -z-10 opacity-60"
-      />
       <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-12 lg:px-8">
         <div>
           {eyebrow && (

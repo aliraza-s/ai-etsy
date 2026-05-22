@@ -33,12 +33,12 @@ function IllustrationShell({
       <svg viewBox="0 0 400 320" className="h-full w-full overflow-visible">
         <defs>
           <linearGradient id="pi-soft" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(0.585 0.12 191)" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="oklch(0.77 0.16 70)" stopOpacity="0.12" />
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.12" />
           </linearGradient>
           <linearGradient id="pi-teal" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="oklch(0.585 0.12 191)" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="oklch(0.585 0.12 191)" stopOpacity="0.55" />
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.55" />
           </linearGradient>
           <linearGradient id="pi-amber" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="oklch(0.82 0.14 70)" stopOpacity="0.9" />
@@ -129,7 +129,7 @@ export function PricingIllustration({ className }: { className?: string }) {
           height="180"
           rx="14"
           fill="url(#pi-teal)"
-          stroke="oklch(0.585 0.12 191)"
+          stroke="var(--primary)"
           strokeOpacity="0.5"
         />
         <text
@@ -254,7 +254,7 @@ export function NicheIllustration({ className }: { className?: string }) {
         cy="160"
         r="110"
         fill="none"
-        stroke="oklch(0.585 0.12 191)"
+        stroke="var(--primary)"
         strokeOpacity="0.2"
         strokeWidth="1"
         strokeDasharray="2 4"
@@ -264,7 +264,7 @@ export function NicheIllustration({ className }: { className?: string }) {
         cy="160"
         r="74"
         fill="none"
-        stroke="oklch(0.585 0.12 191)"
+        stroke="var(--primary)"
         strokeOpacity="0.25"
         strokeWidth="1"
         strokeDasharray="2 4"
@@ -274,7 +274,7 @@ export function NicheIllustration({ className }: { className?: string }) {
         cy="160"
         r="40"
         fill="none"
-        stroke="oklch(0.585 0.12 191)"
+        stroke="var(--primary)"
         strokeOpacity="0.35"
         strokeWidth="1"
       />
@@ -289,18 +289,18 @@ export function NicheIllustration({ className }: { className?: string }) {
       >
         <path
           d="M 200 160 L 200 50 A 110 110 0 0 1 308 175 Z"
-          fill="oklch(0.585 0.12 191)"
+          fill="var(--primary)"
           fillOpacity="0.1"
         />
-        <line x1="200" y1="160" x2="200" y2="50" stroke="oklch(0.585 0.12 191)" strokeWidth="1.5" />
+        <line x1="200" y1="160" x2="200" y2="50" stroke="var(--primary)" strokeWidth="1.5" />
       </g>
 
       {/* Detected clusters */}
       <Cluster cx={140} cy={90} r={9} color="oklch(0.82 0.14 70)" delay="-0.5s" />
-      <Cluster cx={262} cy={102} r={11} color="oklch(0.585 0.12 191)" delay="-1.2s" />
+      <Cluster cx={262} cy={102} r={11} color="var(--primary)" delay="-1.2s" />
       <Cluster cx={290} cy={210} r={8} color="oklch(0.82 0.14 70)" delay="-1.8s" />
-      <Cluster cx={130} cy={224} r={10} color="oklch(0.585 0.12 191)" delay="-0.2s" />
-      <Cluster cx={200} cy={160} r={6} color="oklch(0.585 0.12 191)" delay="0s" />
+      <Cluster cx={130} cy={224} r={10} color="var(--primary)" delay="-0.2s" />
+      <Cluster cx={200} cy={160} r={6} color="var(--primary)" delay="0s" />
 
       {/* Center compass */}
       <circle
@@ -308,7 +308,7 @@ export function NicheIllustration({ className }: { className?: string }) {
         cy="160"
         r="6"
         fill="var(--background)"
-        stroke="oklch(0.585 0.12 191)"
+        stroke="var(--primary)"
         strokeWidth="2"
       />
     </IllustrationShell>
@@ -381,7 +381,7 @@ export function CalculatorIllustration({ className }: { className?: string }) {
               width="40"
               height="4"
               rx="2"
-              fill="oklch(0.585 0.12 191)"
+              fill="var(--primary)"
               opacity={i === 3 ? 1 : 0.5}
             />
           </g>
@@ -538,7 +538,7 @@ export function BlogIllustration({ className }: { className?: string }) {
           />
         ))}
         {/* Pull-quote accent */}
-        <rect x="94" y="216" width="2" height="28" fill="oklch(0.585 0.12 191)" />
+        <rect x="94" y="216" width="2" height="28" fill="var(--primary)" />
         <rect
           x="102"
           y="220"
@@ -572,7 +572,7 @@ export function BlogIllustration({ className }: { className?: string }) {
           cy="116"
           r="22"
           fill="var(--card)"
-          stroke="oklch(0.585 0.12 191)"
+          stroke="var(--primary)"
           strokeWidth="2"
         />
         <text
@@ -582,7 +582,7 @@ export function BlogIllustration({ className }: { className?: string }) {
           fontFamily="var(--font-mono)"
           fontSize="11"
           fontWeight="700"
-          fill="oklch(0.585 0.12 191)"
+          fill="var(--primary)"
         >
           7
         </text>
@@ -607,11 +607,11 @@ export function AboutIllustration({ className }: { className?: string }) {
     <IllustrationShell className={className}>
       {/* People grid */}
       {[
-        { cx: 140, cy: 120, color: "oklch(0.585 0.12 191)", delay: "0s" },
+        { cx: 140, cy: 120, color: "var(--primary)", delay: "0s" },
         { cx: 200, cy: 100, color: "oklch(0.82 0.14 70)", delay: "-0.6s" },
-        { cx: 260, cy: 120, color: "oklch(0.585 0.12 191)", delay: "-1.2s" },
+        { cx: 260, cy: 120, color: "var(--primary)", delay: "-1.2s" },
         { cx: 140, cy: 200, color: "oklch(0.82 0.14 70)", delay: "-1.8s" },
-        { cx: 200, cy: 220, color: "oklch(0.585 0.12 191)", delay: "-2.4s" },
+        { cx: 200, cy: 220, color: "var(--primary)", delay: "-2.4s" },
         { cx: 260, cy: 200, color: "oklch(0.82 0.14 70)", delay: "-3s" },
       ].map((p, i) => (
         <g
@@ -680,7 +680,7 @@ export function ActivityIllustration({ className }: { className?: string }) {
             width="22"
             height={h}
             rx="4"
-            fill={i === 5 ? "url(#pi-teal)" : "oklch(0.585 0.12 191)"}
+            fill={i === 5 ? "url(#pi-teal)" : "var(--primary)"}
             opacity={i === 5 ? 1 : 0.45}
             className="pi-anim"
             style={{

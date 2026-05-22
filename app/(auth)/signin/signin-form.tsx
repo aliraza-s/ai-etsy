@@ -83,7 +83,11 @@ export function SignInForm() {
   const anyBusy = passwordSubmitting || magicSubmitting || googleLoading;
 
   return (
-    <div className="mt-6 space-y-4">
+    // suppressHydrationWarning here because privacy extensions
+    // (Bitdefender Anti-Tracker, etc.) inject `bis_skin_checked` onto every
+    // <div> before React hydrates, which causes a noisy console warning even
+    // though hydration still completes successfully.
+    <div className="mt-6 space-y-4" suppressHydrationWarning>
       <button
         type="button"
         onClick={onGoogle}

@@ -11,12 +11,9 @@ export interface CtaProps {
 
 export function Cta({ title, body, primary, secondary, trustSignals }: CtaProps) {
   return (
-    <div className="border-border from-primary/12 via-card to-accent/8 relative isolate overflow-hidden rounded-3xl border bg-gradient-to-br p-8 text-center shadow-sm sm:p-12">
-      {/* Decorative pattern + spotlight */}
-      <div
-        aria-hidden
-        className="dot-pattern pointer-events-none absolute inset-0 -z-10 opacity-50"
-      />
+    <div className="border-border bg-card relative isolate overflow-hidden rounded-3xl border p-8 text-center shadow-sm sm:p-12">
+      {/* Atmospheric mesh + soft top spotlight. */}
+      <div aria-hidden className="mesh-bg pointer-events-none absolute inset-0 -z-10" />
       <div aria-hidden className="spotlight pointer-events-none absolute inset-0 -z-10" />
 
       <span className="border-border/70 bg-card/80 text-muted-foreground mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium backdrop-blur">

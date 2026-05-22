@@ -84,7 +84,12 @@ export function SignUpForm() {
   const submitting = form.formState.isSubmitting;
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
+    // suppressHydrationWarning — see signin-form.tsx for context (Bitdefender Anti-Tracker).
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="mt-6 space-y-4"
+      suppressHydrationWarning
+    >
       <Field
         id="username"
         label="Username"
